@@ -37,13 +37,31 @@ parser.add_argument(
     default = None
 )
 parser.add_argument(
-    '--camera', '-camera',
+    '--imagestxt', '-imagestxt',
     type=str,
     required = True,
     default = None
 )
 parser.add_argument(
-    '--geolocation', '-geolocation',
+    '--sensors', '-sensors',
+    type=str,
+    required = True,
+    default = None
+)
+parser.add_argument(
+    '--bt', '-bt',
+    type=str,
+    required = True,
+    default = None
+)
+parser.add_argument(
+    '--wifi', '-wifi',
+    type=str,
+    required = True,
+    default = None
+)
+parser.add_argument(
+    '--trajectories', '-trajectories',
     type=str,
     required = True,
     default = None
@@ -59,43 +77,71 @@ with open(args.image, 'rb') as f:
 # open it again with PIL just to find out its size
 image = Image.open(args.image)
 
-with open(args.camera, 'r') as f:
-    camera_config = json.load(f)
+with open(args.imagestxt, 'r') as f:
+    lines = f.read().splitlines()[1:]  # skip header
     f.close()
-print("Camera config:")
-print(camera_config)
 
-with open(args.geolocation, 'r') as f:
-    geolocation_config = json.load(f)
+images_config = [line.strip().split(',') for line in lines][0]
+print("Image config:")
+print(images_config)
+
+with open(args.sensors, 'r') as f:
+    lines = f.read().splitlines()[1:]
     f.close()
-print("(Coarse) geolocation config:")
-print(geolocation_config)
+
+sensors_config = [line.strip().split(',') for line in lines]
+print("Sensors config:")
+print(sensors_config)
+
+with open(args.bt, 'r') as f:
+    lines = f.read().splitlines()[1:]
+    f.close()
+
+bt_config = [line.strip().split(',') for line in lines]
+print("Bluetooth config:")
+print(bt_config)
+
+with open(args.wifi, 'r') as f:
+    lines = f.read().splitlines()[1:]
+    f.close()
+
+wifi_config = [line.strip().split(',') for line in lines]
+print("Wifi config:")
+print(wifi_config)
+
+with open(args.trajectories, 'r') as f:
+    lines = f.read().splitlines()[1:]
+    f.close()
+
+trajectories_config = [line.strip().split(',') for line in lines]
+print("Trajectories config:")
+print(trajectories_config)
 
 
-kCameraSensorId = "my_camera_sensor"
+kCameraSensorId = images_config[1]
 cameraReading = CameraReading(sensorId=kCameraSensorId)
-cameraReading.timestamp = datetime.now(timezone.utc).timestamp()*1000 # milliseconds since epoch
+cameraReading.timestamp = images_config[0]
 cameraReading.sensorId = kCameraSensorId
 cameraReading.imageFormat = ImageFormat.RGBA32
 cameraReading.size = [image.width, image.height]
 cameraReading.imageBytes = image_base64
 cameraReading.sequenceNumber = 1
 cameraReading.imageOrientation = ImageOrientation()
-cameraReading.params = CameraParameters(model=camera_config["camera_model"], modelParams=camera_config["camera_params"])
+# cameraReading.params = CameraParameters(model=camera_config["camera_model"], modelParams=camera_config["camera_params"])
 
-kGeolocationSensorId = "my_gps_sensor"
-geolocationReading = GeolocationReading(sensorId=kGeolocationSensorId)
-geolocationReading.timestamp = datetime.now(timezone.utc).timestamp()*1000 # milliseconds since epoch
-geolocationReading.latitude = geolocation_config["lat"]
-geolocationReading.longitude = geolocation_config["lon"]
-geolocationReading.altitude = geolocation_config["h"]
+# kGeolocationSensorId = "my_gps_sensor"
+# geolocationReading = GeolocationReading(sensorId=kGeolocationSensorId)
+# geolocationReading.timestamp = datetime.now(timezone.utc).timestamp()*1000 # milliseconds since epoch
+# geolocationReading.latitude = geolocation_config["lat"]
+# geolocationReading.longitude = geolocation_config["lon"]
+# geolocationReading.altitude = geolocation_config["h"]
 
 geoPoseRequest = GeoPoseRequest()
 geoPoseRequest.timestamp = datetime.now(timezone.utc).timestamp()*1000 # milliseconds since epoch
 geoPoseRequest.sensors.append(Sensor(type = SensorType.CAMERA, id=kCameraSensorId))
 geoPoseRequest.sensorReadings.cameraReadings.append(cameraReading)
-geoPoseRequest.sensors.append(Sensor(type = SensorType.GEOLOCATION, id=kGeolocationSensorId))
-geoPoseRequest.sensorReadings.geolocationReadings.append(geolocationReading)
+# geoPoseRequest.sensors.append(Sensor(type = SensorType.GEOLOCATION, id=kGeolocationSensorId))
+# geoPoseRequest.sensorReadings.geolocationReadings.append(geolocationReading)
 
 try:
     headers = {"Content-Type":"application/json"}
