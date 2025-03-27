@@ -87,7 +87,7 @@ with open(args.imagestxt, 'r') as f:
     lines = f.read().splitlines()[1:]  # skip header
     f.close()
 
-images_config = [line.strip().split(',') for line in lines][0]
+images_config = [line.strip().split(', ') for line in lines][0]
 print("Image config:")
 print(images_config)
 
@@ -95,7 +95,7 @@ with open(args.sensors, 'r') as f:
     lines = f.read().splitlines()[1:]
     f.close()
 
-sensors_config = [line.strip().split(',') for line in lines]
+sensors_config = [line.strip().split(', ') for line in lines]
 print("Sensors config:")
 print(sensors_config)
 
@@ -103,7 +103,7 @@ with open(args.bt, 'r') as f:
     lines = f.read().splitlines()[1:]
     f.close()
 
-bt_config = [line.strip().split(',') for line in lines]
+bt_config = [line.strip().split(', ') for line in lines]
 print("Bluetooth config:")
 print(bt_config)
 
@@ -111,7 +111,7 @@ with open(args.wifi, 'r') as f:
     lines = f.read().splitlines()[1:]
     f.close()
 
-wifi_config = [line.strip().split(',') for line in lines]
+wifi_config = [line.strip().split(', ') for line in lines]
 print("Wifi config:")
 print(wifi_config)
 
@@ -119,7 +119,7 @@ with open(args.trajectories, 'r') as f:
     lines = f.read().splitlines()[1:]
     f.close()
 
-trajectories_config = [line.strip().split(',') for line in lines]
+trajectories_config = [line.strip().split(', ') for line in lines]
 print("Trajectories config:")
 print(trajectories_config)
 
@@ -133,6 +133,8 @@ cameraReading.size = [image.width, image.height]
 cameraReading.imageBytes = image_base64
 cameraReading.sequenceNumber = 1
 cameraReading.imageOrientation = ImageOrientation()
+cameraReading.params.model = sensors_config[0][3]
+cameraReading.params.modelParams = sensors_config[0][4:]
 # cameraReading.params = CameraParameters(model=camera_config["camera_model"], modelParams=camera_config["camera_params"])
 
 # kGeolocationSensorId = "my_gps_sensor"
@@ -142,10 +144,29 @@ cameraReading.imageOrientation = ImageOrientation()
 # geolocationReading.longitude = geolocation_config["lon"]
 # geolocationReading.altitude = geolocation_config["h"]
 
+kBluetoothSensorId = bt_config[0][1]
+bluetoothReading = BluetoothReading(sensorId=kBluetoothSensorId)
+bluetoothReading.timestamp = bt_config[0][0]
+bluetoothReading.address = [bt_config[i][2] for i in range(0,len(bt_config))]
+bluetoothReading.RSSI = [bt_config[i][3] for i in range(0,len(bt_config))]
+
+kWifiSensorId = bt_config[0][1]
+wifiReading = WiFiReading(sensorId=kWifiSensorId)
+wifiReading.timestamp = wifi_config[0][0]
+wifiReading.BSSID = [wifi_config[i][2] for i in range(0,len(wifi_config))]
+wifiReading.frequency = [wifi_config[i][3] for i in range(0,len(wifi_config))]
+wifiReading.RSSI = [wifi_config[i][4] for i in range(0,len(wifi_config))]
+wifiReading.scanTimeStart = [wifi_config[i][6] for i in range(0,len(wifi_config))]
+wifiReading.scanTimeEnd = [wifi_config[i][7] for i in range(0,len(wifi_config))]
+
 geoPoseRequest = GeoPoseRequest()
 geoPoseRequest.timestamp = datetime.now(timezone.utc).timestamp()*1000 # milliseconds since epoch
-geoPoseRequest.sensors.append(Sensor(type = SensorType.CAMERA, id=kCameraSensorId))
+geoPoseRequest.sensors.append(Sensor(type = SensorType.CAMERA, id=kCameraSensorId, name=sensors_config[0][1], model=sensors_config[0][3]))
 geoPoseRequest.sensorReadings.cameraReadings.append(cameraReading)
+geoPoseRequest.sensors.append(Sensor(type = SensorType.BLUETOOTH, id=kBluetoothSensorId))
+geoPoseRequest.sensorReadings.bluetoothReadings.append(bluetoothReading)
+geoPoseRequest.sensors.append(Sensor(type = SensorType.WIFI, id=kWifiSensorId))
+geoPoseRequest.sensorReadings.wifiReadings.append(wifiReading)
 # geoPoseRequest.sensors.append(Sensor(type = SensorType.GEOLOCATION, id=kGeolocationSensorId))
 # geoPoseRequest.sensorReadings.geolocationReadings.append(geolocationReading)
 
