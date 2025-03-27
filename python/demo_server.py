@@ -10,6 +10,7 @@ from flask import Flask, request, jsonify, make_response, abort
 from argparse import ArgumentParser
 import base64
 from oscp.geoposeprotocol import *
+from demo_docker import *
 
 
 parser = ArgumentParser()
@@ -47,7 +48,8 @@ app = Flask(__name__)
 
 @app.route('/geopose', methods=['GET'])
 def status():
-    return make_response("{\"status\": \"running\"}", 200)
+    client_docker = start_docker()
+    return client_docker
 
 
 @app.route('/geopose', methods=['POST'])
