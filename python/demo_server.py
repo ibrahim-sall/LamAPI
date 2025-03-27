@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: MIT
 
 
+import subprocess
 from flask import Flask, request, jsonify, make_response, abort
 from argparse import ArgumentParser
 import base64
@@ -23,7 +24,7 @@ parser.add_argument(
 parser.add_argument(
     '--output_path', '-output_path',
     type=str,
-    required=True,
+    required=False,
     default='/mnt/lamas/OUT',
     help='Specify the output path for the results. Default is "/mnt/lamas/OUT".'
 )
@@ -48,8 +49,13 @@ app = Flask(__name__)
 
 @app.route('/geopose', methods=['GET'])
 def status():
-    client_docker = start_docker()
-    return client_docker
+    client_docker, container = start_docker()
+    cmd = ['sudo', 'mkdir', '-p', args.output_path]
+    subprocess.run(cmd)
+    set_environment_variables(args.dataset)
+    create_docker_volume(args.output_path, client_docker)
+
+    return container
 
 
 @app.route('/geopose', methods=['POST'])
