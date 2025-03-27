@@ -1,0 +1,3 @@
+# sensor_id, name, sensor_type, [sensor_params]+
+ios_2022-01-12_16.32.48_000/cam_phone_14911412476, phone camera for timestamp 14911412476, camera, PINHOLE, 1440, 1920, 1590.657593, 1590.657593, 716.893005, 939.960144
+ios_2022-01-12_16.32.48_000/bt_sensor, Apple bluetooth sensor, bluetooth
