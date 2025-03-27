@@ -34,7 +34,7 @@ parser.add_argument(
     help='Specify the dataset to use between {CAB, LIN, HGE}. Default is "CAB".'
 )
 
-args=parser.parse_args()
+args = parser.parse_args()
 
 with open(args.config, 'r') as f:
     config = json.load(f)
@@ -62,7 +62,6 @@ def localize():
         print('request has no image')
         abort(400, description='request has no image')
     imgdata = base64.b64decode(geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes)
-    write_data(args.output_path, imgdata, geoPoseRequest)
     # DEBUG
     #print("Request:")
     #print(geoPoseRequest.toJson())
@@ -91,10 +90,15 @@ def localize():
     #print(geoPoseResponse.toJson())
     #print()
 
-    response = make_response(geoPoseResponse.toJson(), 200)
+    try:
+        write_data(imgdata, geoPoseRequest)
+        response = make_response(geoPoseResponse.toJson(), 200)
+    except Exception as e:
+        print(f"Error writing data: {e}")
+        response = make_response(jsonify({"error": "Failed to write data"}), 500)
     return response
 
-def write_data(args, imgdata, geoPoseRequest):
+def write_data(imgdata, geoPoseRequest):
     with open(f'{args.output_path}/{geoPoseRequest.timestamp}.png', 'wb') as f:
         f.write(imgdata)
         f.close()
