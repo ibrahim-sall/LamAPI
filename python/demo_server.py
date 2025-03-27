@@ -126,13 +126,21 @@ def write_data(imgdata, geo_pose_request):
     sensor_readings = {
         "bluetoothReadings": {
             "filename": "bt.txt",
-            "header": "# timestamp, sensor_id, id, rssi_dbm, name\n",
-            "line_format": lambda reading: f"{reading.timestamp}, {reading.sensorId}, {reading.address}, {reading.RSSI}, {reading.name or ''}\n"
+            "header": "# timestamp, sensor_id, mac_addr, rssi_dbm, name\n",
+            "line_format": lambda reading: [
+                f"{reading.timestamp}, {reading.sensorId}, {mac}, {rssi}, {reading.name or ''}\n"
+                for mac, rssi in zip(reading.address, reading.RSSI)
+            ]
         },
         "wifiReadings": {
             "filename": "wifi.txt",
             "header": "# timestamp, sensor_id, mac_addr, frequency_khz, rssi_dbm, name, scan_time_start_us, scan_time_end_us\n",
-            "line_format": lambda reading: f"{reading.timestamp}, {reading.sensorId}, {reading.BSSID}, {reading.frequency}, {reading.RSSI}, {reading.SSID or ''}, {reading.scanTimeStart}, {reading.scanTimeEnd}\n"
+            "line_format": lambda reading: [
+                f"{reading.timestamp}, {reading.sensorId}, {bssid}, {freq}, {rssi}, {reading.SSID or ''}, {start}, {end}\n"
+                for bssid, freq, rssi, start, end in zip(
+                    reading.BSSID, reading.frequency, reading.RSSI, reading.scanTimeStart, reading.scanTimeEnd
+                )
+            ]
         }
     }
 
@@ -141,16 +149,13 @@ def write_data(imgdata, geo_pose_request):
             readings = getattr(geo_pose_request.sensorReadings, attribute)
             if readings:
                 print(f"Traitement des données pour {attribute} :")
-                for reading in readings:
-                    for attr, value in vars(reading).items():
-                        print(f"    {attr}")
                 try:
                     file_path = f"{output_dir}/{details['filename']}"
                     with open(file_path, 'w', encoding='utf-8') as sensor_file:
                         sensor_file.write(details['header'])
                         for reading in readings:
-                            line = details['line_format'](reading)
-                            sensor_file.write(line)
+                            lines = details['line_format'](reading)
+                            sensor_file.writelines(lines)
                         print(f"Fichier écrit : {file_path}")
                 except Exception as e:
                     print(f"Erreur lors de l'écriture du fichier {details['filename']} : {e}")
