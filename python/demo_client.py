@@ -138,10 +138,17 @@ cameraReading.params.modelParams = sensors_config[0][4:]
 # geolocationReading.longitude = geolocation_config["lon"]
 # geolocationReading.altitude = geolocation_config["h"]
 
+kBluetoothSensorId = bt_config[0][1]
+bluetoothReading = BluetoothReading(sensorId=kBluetoothSensorId)
+bluetoothReading.timestamp = bt_config[0][0]
+bluetoothReading.RSSI = [bt_config[i][3] for i in range(0,len(bt_config))]
+
 geoPoseRequest = GeoPoseRequest()
 geoPoseRequest.timestamp = datetime.now(timezone.utc).timestamp()*1000 # milliseconds since epoch
 geoPoseRequest.sensors.append(Sensor(type = SensorType.CAMERA, id=kCameraSensorId, name=sensors_config[0][1], model=sensors_config[0][3]))
 geoPoseRequest.sensorReadings.cameraReadings.append(cameraReading)
+geoPoseRequest.sensors.append(Sensor(type = SensorType.BLUETOOTH, id=kBluetoothSensorId))
+geoPoseRequest.sensorReadings.bluetoothReadings.append(bluetoothReading)
 # geoPoseRequest.sensors.append(Sensor(type = SensorType.GEOLOCATION, id=kGeolocationSensorId))
 # geoPoseRequest.sensorReadings.geolocationReadings.append(geolocationReading)
 
