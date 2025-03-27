@@ -4,5 +4,5 @@ npm-debug.log
 .DS_Store
 dist/**/*
 .vscode
-output.json
+*/output.json
 __pycache__
