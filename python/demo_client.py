@@ -66,6 +66,12 @@ parser.add_argument(
     required = True,
     default = None
 )
+parser.add_argument(
+    '--output', '-output',
+    type=str,
+    required = False,
+    default = None
+)
 args=parser.parse_args()
 
 
@@ -143,6 +149,17 @@ geoPoseRequest.sensorReadings.cameraReadings.append(cameraReading)
 # geoPoseRequest.sensors.append(Sensor(type = SensorType.GEOLOCATION, id=kGeolocationSensorId))
 # geoPoseRequest.sensorReadings.geolocationReadings.append(geolocationReading)
 
+
+def write_output(geoposeresponse):
+
+    if (args.output):
+        file_path=args.output+"/output.json"
+        print(args.output)
+        with open(file_path,"w") as f:
+            f.write(geoposeresponse.toJson())
+            f.close()
+
+
 try:
     headers = {"Content-Type":"application/json"}
     body = geoPoseRequest.toJson()
@@ -162,6 +179,8 @@ try:
     print("Response:")
     print(geoPoseResponse.toJson())
     print()
+
+    write_output(geoPoseResponse)
 
 except Exception as e:
     print(f'err: {e}')
