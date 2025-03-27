@@ -62,7 +62,7 @@ def localize():
         print('request has no image')
         abort(400, description='request has no image')
     imgdata = base64.b64decode(geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes)
-
+    write_data(args.output_path, imgdata, geoPoseRequest)
     # DEBUG
     #print("Request:")
     #print(geoPoseRequest.toJson())
@@ -93,6 +93,11 @@ def localize():
 
     response = make_response(geoPoseResponse.toJson(), 200)
     return response
+
+def write_data(args, imgdata, geoPoseRequest):
+    with open(f'{args.output_path}/{geoPoseRequest.timestamp}.png', 'wb') as f:
+        f.write(imgdata)
+        f.close()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=False)
