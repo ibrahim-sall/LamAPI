@@ -98,6 +98,7 @@ def write_data(args, imgdata, geoPoseRequest):
     with open(f'{args.output_path}/{geoPoseRequest.timestamp}.png', 'wb') as f:
         f.write(imgdata)
         f.close()
+    
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=False)
