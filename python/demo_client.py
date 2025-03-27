@@ -141,7 +141,17 @@ cameraReading.params.modelParams = sensors_config[0][4:]
 kBluetoothSensorId = bt_config[0][1]
 bluetoothReading = BluetoothReading(sensorId=kBluetoothSensorId)
 bluetoothReading.timestamp = bt_config[0][0]
+bluetoothReading.address = [bt_config[i][2] for i in range(0,len(bt_config))]
 bluetoothReading.RSSI = [bt_config[i][3] for i in range(0,len(bt_config))]
+
+kWifiSensorId = bt_config[0][1]
+wifiReading = WiFiReading(sensorId=kWifiSensorId)
+wifiReading.timestamp = wifi_config[0][0]
+wifiReading.BSSID = [wifi_config[i][2] for i in range(0,len(wifi_config))]
+wifiReading.frequency = [wifi_config[i][3] for i in range(0,len(wifi_config))]
+wifiReading.RSSI = [wifi_config[i][4] for i in range(0,len(wifi_config))]
+wifiReading.scanTimeStart = [wifi_config[i][6] for i in range(0,len(wifi_config))]
+wifiReading.scanTimeEnd = [wifi_config[i][7] for i in range(0,len(wifi_config))]
 
 geoPoseRequest = GeoPoseRequest()
 geoPoseRequest.timestamp = datetime.now(timezone.utc).timestamp()*1000 # milliseconds since epoch
@@ -149,6 +159,8 @@ geoPoseRequest.sensors.append(Sensor(type = SensorType.CAMERA, id=kCameraSensorI
 geoPoseRequest.sensorReadings.cameraReadings.append(cameraReading)
 geoPoseRequest.sensors.append(Sensor(type = SensorType.BLUETOOTH, id=kBluetoothSensorId))
 geoPoseRequest.sensorReadings.bluetoothReadings.append(bluetoothReading)
+geoPoseRequest.sensors.append(Sensor(type = SensorType.WIFI, id=kWifiSensorId))
+geoPoseRequest.sensorReadings.wifiReadings.append(wifiReading)
 # geoPoseRequest.sensors.append(Sensor(type = SensorType.GEOLOCATION, id=kGeolocationSensorId))
 # geoPoseRequest.sensorReadings.geolocationReadings.append(geolocationReading)
 
