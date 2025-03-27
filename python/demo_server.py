@@ -19,6 +19,21 @@ parser.add_argument(
     required = True,
     default = None
 )
+parser.add_argument(
+    '--output_path', '-output_path',
+    type=str,
+    required=True,
+    default='/mnt/lamas/OUT',
+    help='Specify the output path for the results. Default is "/mnt/lamas/OUT".'
+)
+parser.add_argument(
+    '--dataset', '-dataset',
+    type=str,
+    required=False,
+    default='CAB',
+    help='Specify the dataset to use between {CAB, LIN, HGE}. Default is "CAB".'
+)
+
 args=parser.parse_args()
 
 with open(args.config, 'r') as f:
