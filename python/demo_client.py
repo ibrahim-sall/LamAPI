@@ -88,40 +88,31 @@ with open(args.imagestxt, 'r') as f:
     f.close()
 
 images_config = [line.strip().split(', ') for line in lines][0]
-print("Image config:")
-print(images_config)
 
 with open(args.sensors, 'r') as f:
     lines = f.read().splitlines()[1:]
     f.close()
 
 sensors_config = [line.strip().split(', ') for line in lines]
-print("Sensors config:")
-print(sensors_config)
 
 with open(args.bt, 'r') as f:
     lines = f.read().splitlines()[1:]
     f.close()
 
 bt_config = [line.strip().split(', ') for line in lines]
-print("Bluetooth config:")
-print(bt_config)
 
 with open(args.wifi, 'r') as f:
     lines = f.read().splitlines()[1:]
     f.close()
 
 wifi_config = [line.strip().split(', ') for line in lines]
-print("Wifi config:")
-print(wifi_config)
+
 
 with open(args.trajectories, 'r') as f:
     lines = f.read().splitlines()[1:]
     f.close()
 
 trajectories_config = [line.strip().split(', ') for line in lines]
-print("Trajectories config:")
-print(trajectories_config)
 
 
 kCameraSensorId = images_config[1]
@@ -187,19 +178,18 @@ try:
 
     # DEBUG
     geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes = "<IMAGE_BASE64>"
-    print("Request (without image):")
-    print(geoPoseRequest.toJson())
-    print()
+    # print("Request (without image):"
+    # print()
 
     response = requests.post(args.url, headers=headers, data=body)
-    print(f'Status: {response.status_code}')
-    jdata = response.json()
-    geoPoseResponse = GeoPoseResponse.fromJson(jdata)
+    # print(f'Status: {response.status_code}')
+    # = response.json()
+    #geoPoseResponse = GeoPoseResponse.fromJson(jdata)
 
-    # DEBUG:
-    print("Response:")
-    print(geoPoseResponse.toJson())
-    print()
+    # # DEBUG:
+    # print("Response:")
+    # print(geoPoseResponse.toJson())
+    # print()
 
     write_output(geoPoseResponse)
 
