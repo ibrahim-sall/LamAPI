@@ -5,3 +5,4 @@ npm-debug.log
 dist/**/*
 .vscode
 __pycache__
+OUT
