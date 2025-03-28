@@ -14,8 +14,8 @@ def home():
 def run_bash_command():
     try:
         # Exemple de commande Bash
-        CUR_DIR = os.getcwd()
-        bash_script_path = os.path.join(CUR_DIR, 'run-oscp-gpp-client.sh')
+        cur_dir = os.getcwd()
+        bash_script_path = os.path.join(cur_dir, 'run-oscp-gpp-client.sh')
         result = subprocess.run([bash_script_path], capture_output=True, text=True)
         return jsonify({'output': result.stdout.strip()})
     except Exception as e:
