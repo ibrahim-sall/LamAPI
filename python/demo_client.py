@@ -141,7 +141,7 @@ bluetoothReading.timestamp = bt_config[0][0]
 bluetoothReading.address = [bt_config[i][2] for i in range(0,len(bt_config))]
 bluetoothReading.RSSI = [bt_config[i][3] for i in range(0,len(bt_config))]
 
-kWifiSensorId = bt_config[0][1]
+kWifiSensorId = wifi_config[0][1]
 wifiReading = WiFiReading(sensorId=kWifiSensorId)
 wifiReading.timestamp = wifi_config[0][0]
 wifiReading.BSSID = [wifi_config[i][2] for i in range(0,len(wifi_config))]
@@ -191,7 +191,7 @@ try:
     print(geoPoseResponse.toJson())
     print()
 
-    write_output(geoPoseResponse)
+    #write_output(geoPoseResponse)
 
 except Exception as e:
     print(f'err: {e}')

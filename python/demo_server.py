@@ -141,6 +141,13 @@ def write_data(imgdata, geo_pose_request):
                     reading.BSSID, reading.frequency, reading.RSSI, reading.scanTimeStart, reading.scanTimeEnd
                 )
             ]
+        },
+        "cameraReadings": {
+            "filename": "images.txt",
+            "header": "# timestamp, sensor_id, image_path\n",
+            "line_format": lambda reading: [
+                f"{reading.timestamp}, {reading.sensorId}, {output_dir}/{reading.timestamp}.png\n"
+            ]
         }
     }
 
@@ -163,5 +170,6 @@ def write_data(imgdata, geo_pose_request):
             else:
                 print(f"Aucune donnée trouvée pour {attribute}, fichier ignoré.")
 
+            
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=False)
+    app.run(host='0.0.0.0', port=8080, debug=True)
