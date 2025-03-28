@@ -182,14 +182,14 @@ try:
     # print()
 
     response = requests.post(args.url, headers=headers, data=body)
-    # print(f'Status: {response.status_code}')
-    # = response.json()
-    #geoPoseResponse = GeoPoseResponse.fromJson(jdata)
+    print(f'Status: {response.status_code}')
+    jdata = response.json()
+    geoPoseResponse = GeoPoseResponse.fromJson(jdata)
 
-    # # DEBUG:
-    # print("Response:")
-    # print(geoPoseResponse.toJson())
-    # print()
+    # DEBUG:
+    print("Response:")
+    print(geoPoseResponse.toJson())
+    print()
 
     write_output(geoPoseResponse)
 
