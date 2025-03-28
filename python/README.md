@@ -25,3 +25,11 @@ Start the client and execute a single request: `run-oscp-gpp-client.cmd`
 
 # Running on Linux
 Similar to Windows but run the Shell scripts.
+
+# Add a html page to make the requests more easily 
+ run '''bash 
+ python client.py
+ ''' 
+ and access to to localhost webpage to do the request with one click on the button
+
+ WARNING Everything is on the local where client.py is running so not good for production.
