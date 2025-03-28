@@ -141,7 +141,9 @@ def write_data(imgdata, geo_pose_request):
                     reading.BSSID, reading.frequency, reading.RSSI, reading.scanTimeStart, reading.scanTimeEnd
                 )
             ]
-        }
+        },
+        
+        
     }
 
     for attribute, details in sensor_readings.items():
