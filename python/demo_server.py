@@ -12,7 +12,7 @@ import base64
 import os
 import json
 from oscp.geoposeprotocol import *
-
+from demo_docker import *
 
 parser = ArgumentParser()
 parser.add_argument(
@@ -92,6 +92,8 @@ def localize():
 
     try:
         write_data(imgdata, geoPoseRequest)
+        cmd = create_docker_command_lamar(args.output_path, args.output_path,scene="CAB")
+        run_docker_command(cmd)
         response = make_response(geoPoseResponse.toJson(), 200)
     except Exception as e:
         print(f"Error writing data: {e}")
