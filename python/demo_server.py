@@ -73,14 +73,24 @@ def localize():
     # here comes the call to VPS implementation
     # ...
     # right now we just fill in the example values provided in the config file
+    with open('./poses.txt',"r") as f:
+        f.seek(0, 2)
+        while f.tell() > 0:
+            f.seek(f.tell() - 2, 0)
+            char = f.read(1)
+            if char == '\n':
+                break
+        last_line = f.readline().strip().split(',')
+
+
     geoPose = GeoPose()
-    geoPose.quaternion.x = config["geopose"]["quaternion"]["x"]
-    geoPose.quaternion.y = config["geopose"]["quaternion"]["y"]
-    geoPose.quaternion.z = config["geopose"]["quaternion"]["z"]
-    geoPose.quaternion.w = config["geopose"]["quaternion"]["w"]
-    geoPose.position.lat = config["geopose"]["position"]["lat"]
-    geoPose.position.lon = config["geopose"]["position"]["lon"]
-    geoPose.position.h = config["geopose"]["position"]["h"]
+    geoPose.quaternion.x = last_line[3]
+    geoPose.quaternion.y = last_line[4]
+    geoPose.quaternion.z = last_line[5]
+    geoPose.quaternion.w = last_line[2]
+    geoPose.position.lat = last_line[6] # ATTENTION: c'est Tx de LAMAR pas lat
+    geoPose.position.lon = last_line[7] # ATTENTION: c'est Ty de LAMAR pas lon
+    geoPose.position.h = last_line[8] # ATTENTION: c'est Tz de LAMAR pas h
 
     geoPoseResponse = GeoPoseResponse(id = geoPoseRequest.id, timestamp = geoPoseRequest.timestamp)
     geoPoseResponse.geopose = geoPose
