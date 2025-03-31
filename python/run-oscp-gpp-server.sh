@@ -3,7 +3,9 @@ CUR_DIR=$(pwd)
 
 
 # Set these variables:
+
 CONFIG_PATH=$CUR_DIR/../data/seattle_vps.json #a remplacer
+
 
 OUT_PATH=$CUR_DIR/../data/lamar/OUT
 
