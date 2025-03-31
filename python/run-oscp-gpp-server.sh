@@ -12,9 +12,8 @@ OUT_PATH=$CUR_DIR/../data/lamar/OUT
 IMAGE_NAME="ghcr.io/microsoft/lamar-benchmark/lamar"
 CONTAINER_NAME="lamar_container"
 
-
 DOCKER_RUN="docker run --name=$CONTAINER_NAME --runtime=nvidia --shm-size=26G --gpus all -v $OUT_PATH:/output $OUT_PATH:/data"
-
+export DOCKER_RUN
 
 # Vérifier si l'image existe déjà
 if ! sudo docker images | grep -q "$IMAGE_NAME"; then
@@ -24,4 +23,4 @@ else
   echo "L'image Docker existe déjà."
 fi
 
-python demo_server.py --config $CONFIG_PATH -output_path $OUT_PATH
+python3 demo_server.py --config $CONFIG_PATH -output_path $OUT_PATH
