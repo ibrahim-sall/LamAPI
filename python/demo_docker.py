@@ -4,9 +4,10 @@ import subprocess
 
 def create_docker_command_lamar(data_dir, output_dir, scene, ref_id="map", query_id="query_phone", 
                        retrieval="fusion", feature="superpoint", matcher="superglue"):
+    docker_run = os.getenv("DOCKER_RUN")
     
     command = [
-        "$DOCKER_RUN", 
+        docker_run, 
         "python3", "-m", "lamar.run",
         "--scene", scene,
         "--ref_id", ref_id,
