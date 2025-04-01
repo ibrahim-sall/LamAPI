@@ -1,9 +1,7 @@
 # compose.yaml
 services:
   lamar:
-    build:
-      context : ./docker
-      dockerfile: Dockerfile
+    image: ghcr.io/microsoft/lamar-benchmark/lamar:latest
     container_name: lamar_container
     restart: unless-stopped
     ports:

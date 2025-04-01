@@ -19,6 +19,7 @@ ADD . /lamar
 #
 # Builder stage.
 #
+
 FROM common AS builder
 
 RUN apt-get update && \
