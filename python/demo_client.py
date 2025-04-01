@@ -96,6 +96,7 @@ else :
     # open it again with PIL just to find out its size
     image = Image.open(args.image)
 
+kCameraSensorId = "ios_2025-04-01_09.00.00_000/cam_phone_00000000001" # default value
 if  check_file(args.imagestxt, "imagestxt"):
     with open(args.imagestxt, 'r') as f:
         lines = f.read().splitlines()[1:]  # skip header
@@ -115,7 +116,7 @@ if  check_file(args.imagestxt, "imagestxt"):
     cameraReading.imageOrientation = ImageOrientation()
 
 else :
-    cameraReading = CameraReading(sensorId="ios_2025-04-01_09.00.00_000/cam_phone_00000000001")
+    cameraReading = CameraReading(sensorId=kCameraSensorId)
     cameraReading.timestamp = geoPoseRequest.timestamp
     cameraReading.imageFormat = ImageFormat.RGBA32
     cameraReading.size = [image.width, image.height]
@@ -136,6 +137,10 @@ if check_file(args.sensors, "sensors"):
     cameraReading.params.modelParams = sensors_config[0][4:]
 
     geoPoseRequest.sensors.append(Sensor(type = SensorType.CAMERA, id=kCameraSensorId, name=sensors_config[0][1], model=sensors_config[0][3]))
+    geoPoseRequest.sensorReadings.cameraReadings.append(cameraReading)
+
+else :
+    geoPoseRequest.sensors.append(Sensor(type = SensorType.CAMERA, id=kCameraSensorId))
     geoPoseRequest.sensorReadings.cameraReadings.append(cameraReading)
 
 if check_file(args.bt, "bt"):
