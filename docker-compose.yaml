@@ -1,0 +1,45 @@
+# compose.yaml
+services:
+  lamar:
+    build:
+      context : ./docker
+      dockerfile: Dockerfile
+    container_name: lamar_container
+    restart: unless-stopped
+    ports:
+      - 8086:8086
+    volumes:
+      - output_volume:/output
+    networks:
+      - reseau
+  server:
+    build:
+      context: ./python
+      dockerfile: Dockerfile
+    container_name: server
+    ports:
+      - 5000:5000
+    networks:
+      - reseau
+    volumes:
+      - ./rainign:/rainign
+    depends_on:
+      - lamar
+  client_web:
+    build:
+      context: ./python
+      dockerfile: Dockerfile2
+    container_name: database
+    ports:
+      - 8080:8080
+    volumes:
+      - /dev/shm:/dev/shm
+    networks:
+      - reseau
+    depends_on:
+      - server
+volumes:
+  output_volume:
+networks:
+  reseau:
+    driver: bridge
