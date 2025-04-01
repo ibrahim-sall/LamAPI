@@ -73,7 +73,9 @@ def localize():
     # here comes the call to VPS implementation
     # ...
     # right now we just fill in the example values provided in the config file
-    with open('./poses.txt',"r") as f:
+    if not os.path.exists('./data/poses.txt'):
+        return make_response(jsonify({"error": "The file './poses.txt' does not exist."}), 500)
+    with open('./data/poses.txt', "r") as f:
         f.seek(0, 2)
         while f.tell() > 0:
             f.seek(f.tell() - 2, 0)
