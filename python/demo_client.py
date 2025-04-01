@@ -191,9 +191,6 @@ if check_file(args.trajectories, "trajectories"):
     print("Trajectories config:")
     print(trajectories_config)
 
-
-
-
 # cameraReading.params = CameraParameters(model=camera_config["camera_model"], modelParams=camera_config["camera_params"])
 
 # kGeolocationSensorId = "my_gps_sensor"
@@ -223,9 +220,8 @@ try:
 
     # DEBUG
     geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes = "<IMAGE_BASE64>"
-    print("Request (without image):")
-    print(geoPoseRequest.toJson())
-    print()
+    # print("Request (without image):"
+    # print()
 
     response = requests.post(args.url, headers=headers, data=body)
     print(f'Status: {response.status_code}')
@@ -237,7 +233,7 @@ try:
     print(geoPoseResponse.toJson())
     print()
 
-    write_output(geoPoseResponse)
+    #write_output(geoPoseResponse)
 
 except Exception as e:
     print(f'err: {e}')
