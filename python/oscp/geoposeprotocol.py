@@ -554,11 +554,11 @@ class GeoPoseAccuracy(object):
 
 class GeoPoseResponse(object):
     def __init__(self, type:str = "geopose", id:str = str(uuid.uuid4()), timestamp = datetime.now(timezone.utc).timestamp()*1000,
-                accuracy:GeoPoseAccuracy = GeoPoseAccuracy(), geopose:GeoPose = GeoPose()):
+                 geopose:GeoPose = GeoPose()): # accuracy:GeoPoseAccuracy = GeoPoseAccuracy(), (if we have, before geopose)
         self.type = type # ex. geopose
         self.id = id
         self.timestamp = timestamp # The number of milliseconds since the Unix Epoch.
-        self.accuracy = accuracy
+        # self.accuracy = accuracy
         self.geopose = geopose
 
     def __str__(self):
@@ -566,18 +566,18 @@ class GeoPoseResponse(object):
             "type:" + str(self.type) + ',' + \
             "id:" + str(self.id) + ',' + \
             "timestamp:" + str(self.timestamp) + ',' + \
-            "accuracy:" + str(self.accuracy) + ',' + \
             "geopose:" + str(self.geopose) + \
         "}"
 
+    #"accuracy:" + str(self.accuracy) + ',' + \ (if we have, before geopose)
     def toJson(self):
         return json.dumps(self, default=lambda o: o.__dict__)
 
     @staticmethod
     def fromJson(jdata):
-        accuracy = GeoPoseAccuracy.fromJson(jdata["accuracy"])
+        # accuracy = GeoPoseAccuracy.fromJson(jdata["accuracy"])
         geopose = GeoPose.fromJson(jdata["geopose"])
-        return GeoPoseResponse(type=jdata["type"], id=jdata["id"], timestamp=jdata["timestamp"], accuracy=accuracy, geopose=geopose)
+        return GeoPoseResponse(type=jdata["type"], id=jdata["id"], timestamp=jdata["timestamp"], geopose=geopose) # accuracy=accuracy, (if we have, before geopose)
 
 class GeoPoseRequest(object):
     def __init__(self, type:str = "geopose", id:str = str(uuid.uuid4()), timestamp = datetime.now(timezone.utc).timestamp()*1000,
