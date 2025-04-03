@@ -1,7 +1,4 @@
 <!DOCTYPE html>
-<html lang="fr">
-
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -34,7 +31,7 @@
         const formData = new FormData();
         formData.append("image", file);
 
-        fetch("http://127.0.0.1:5000/upload-image", {
+        fetch("/upload-image", {
             method: "POST",
             body: formData
         })
