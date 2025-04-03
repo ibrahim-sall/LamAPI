@@ -32,8 +32,8 @@ services:
       - output_volume:/output
     networks:
       - reseau
-    # depends_on:
-    #   - server
+    depends_on:
+      - server
 volumes:
   output_volume:
 networks:
