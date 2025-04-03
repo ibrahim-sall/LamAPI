@@ -18,4 +18,4 @@ RUN pip install --no-cache-dir flask requests pillow
 EXPOSE 8080
 
 # Run the Python client script
-CMD ["python ./client.py"]
+CMD ["python3", "./client.py"]
