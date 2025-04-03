@@ -7,7 +7,7 @@
     <title>Exécuter une commande Bash</title>
     <script>
         function runBash() {
-            fetch('http://127.0.0.1:5000/run-bash')
+            fetch('http://127.0.0.1:8080/run-bash')
                 .then(response => response.json())
                 .then(data => {
                     if (data.output) {

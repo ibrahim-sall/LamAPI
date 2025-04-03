@@ -29,7 +29,7 @@ parser = ArgumentParser()
 parser.add_argument(
     '--url', '-url',
     type=str,
-    default='http://127.0.0.1:8080/geopose'
+    default='http://127.0.0.1:5000/geopose'
 )
 parser.add_argument(
     '--image', '-image',
