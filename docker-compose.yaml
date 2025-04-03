@@ -1,15 +1,15 @@
 # compose.yaml
 services:
-  lamar:
-    image: ghcr.io/microsoft/lamar-benchmark/lamar:latest
-    container_name: lamar_container
-    restart: unless-stopped
-    ports:
-      - 8086:8086
-    volumes:
-      - output_volume:/output
-    networks:
-      - reseau
+  # lamar:
+  #   image: ghcr.io/microsoft/lamar-benchmark/lamar:latest
+  #   container_name: lamar_container
+  #   restart: unless-stopped
+  #   ports:
+  #     - 8086:8086
+  #   volumes:
+  #     - output_volume:/output
+  #   networks:
+  #     - reseau
   server:
     build:
       context: ./python
@@ -20,22 +20,20 @@ services:
     networks:
       - reseau
     volumes:
-      - ./rainign:/rainign
-    depends_on:
-      - lamar
+      - output_volume:/output
   client_web:
     build:
       context: ./python
       dockerfile: Dockerfile2
-    container_name: database
+    container_name: client
     ports:
       - 8080:8080
     volumes:
-      - /dev/shm:/dev/shm
+      - output_volume:/output
     networks:
       - reseau
-    depends_on:
-      - server
+    # depends_on:
+    #   - server
 volumes:
   output_volume:
 networks:
