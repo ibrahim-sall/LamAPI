@@ -1,20 +1,73 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, request, send_from_directory
+from werkzeug.utils import secure_filename
 import subprocess
 import os
 
 app = Flask(__name__)
 
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+image_path = os.path.join(os.getcwd(), '../data/lamar/ios_2022-01-12_16.32.48_000_14911412476/14911412476.jpg')
+
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
+
+@app.route('/upload-image', methods=['POST'])
+def upload_image():
+    global image_path
+    if 'image' not in request.files:
+        return jsonify({'error': 'Aucun fichier fourni'}), 400
+
+    file = request.files['image']
+    if file.filename == '':
+        return jsonify({'error': 'Nom de fichier vide'}), 400
+
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    file.save(filepath)
+
+    image_path = filepath  # Stocke le chemin
+    return jsonify({'message': 'Image uploadée', 'filename': filename})
 
 @app.route('/run-bash', methods=['GET'])
 def run_bash_command():
     try:
         cur_dir = os.getcwd()
-        bash_script_path = os.path.join(cur_dir, 'run-oscp-gpp-client.sh')
-        result = subprocess.run([bash_script_path], capture_output=True, text=True)
-        return jsonify({'output': result.stdout.strip()}), 200 
+
+        # bash_script_path = os.path.join(cur_dir, 'run-oscp-gpp-client.sh')
+        # result = subprocess.run([bash_script_path], capture_output=True, text=True)
+        # return jsonify({'output': result.stdout.strip()})
+
+        imagestxt_path = os.path.join(cur_dir, '../data/lamar/ios_2022-01-12_16.32.48_000_14911412476/images.txt')
+        sensors_path = os.path.join(cur_dir, '../data/lamar/ios_2022-01-12_16.32.48_000_14911412476/sensors.txt')
+        bt_path = os.path.join(cur_dir, '../data/lamar/ios_2022-01-12_16.32.48_000_14911412476/bt.txt')
+        wifi_path = os.path.join(cur_dir, '../data/lamar/ios_2022-01-12_16.32.48_000_14911412476/wifi.txt')
+        traj_path = os.path.join(cur_dir, '../data/lamar/ios_2022-01-12_16.32.48_000_14911412476/trajectories.txt')
+        out_path = os.path.join(cur_dir, '../data/lamar/out')
+
+        command = [
+            'python3', 'demo_client.py',
+            '--image', image_path,
+            '--imagestxt', imagestxt_path,
+            '--sensors', sensors_path,
+            '--bt', bt_path,
+            '--wifi', wifi_path,
+            '--trajectories', traj_path,
+            '--output', out_path
+        ]
+
+        result = subprocess.run(command, capture_output=True, text=True)
+
+        return jsonify({
+            'stdout': result.stdout.strip(),
+        })
+    
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
