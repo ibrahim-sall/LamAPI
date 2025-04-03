@@ -8,6 +8,7 @@
 
 from flask import Flask, request, jsonify, make_response, abort
 from argparse import ArgumentParser
+from flask_swagger import swagger
 import base64
 import os
 import json
@@ -51,9 +52,18 @@ app = Flask(__name__)
 def status():
     return make_response("{\"status\": \"running\"}", 200)
 
+@app.route('/geopose/spec', methods=['POST'])
+def spec():
+    base_path = os.path.join(app.root_path, 'docs')
+    return jsonify(swagger(app), from_file_keyword="swagger_from_file", base_path=base_path)
+
 
 @app.route('/geopose', methods=['POST'])
 def localize():
+    """
+    swagger_from_file: test.yml
+    """
+        
     jdata = request.get_json()
     geoPoseRequest = GeoPoseRequest.fromJson(jdata)
 
