@@ -15,10 +15,7 @@ COPY . /app
 RUN pip install --no-cache-dir flask requests pillow
 
 # Expose port
-EXPOSE 5000
+EXPOSE 8080
 
-# Make sure the script is executable
-RUN chmod +x ./run-oscp-gpp-server.sh
-
-# Run the server
-CMD ["./run-oscp-gpp-server.sh"]
+# Run the Python client script
+CMD ["python3", "./client.py"]

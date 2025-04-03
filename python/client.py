@@ -38,7 +38,6 @@ def upload_image():
 @app.route('/run-bash', methods=['GET'])
 def run_bash_command():
     try:
-        # Exemple de commande Bash
         cur_dir = os.getcwd()
 
         # bash_script_path = os.path.join(cur_dir, 'run-oscp-gpp-client.sh')
@@ -70,7 +69,7 @@ def run_bash_command():
         })
     
     except Exception as e:
-        return jsonify({'error': str(e)})
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=8080, host='0.0.0.0')
