@@ -91,6 +91,13 @@ def run_bash_command():
 
         result = subprocess.run(command, capture_output=True, text=True)
 
+        if result.returncode != 0:
+            return jsonify({
+                'error': 'La commande a échoué',
+                'stderr': result.stderr.strip(),
+                'returncode': result.returncode
+            }), 500
+
         return jsonify({
             'stdout': result.stdout.strip(),
         })
