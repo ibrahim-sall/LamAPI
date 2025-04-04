@@ -103,8 +103,8 @@ if  check_file(args.imagestxt, "imagestxt"):
         f.close()
 
     images_config = [line.strip().split(', ') for line in lines][0]
-    print("Image config:")
-    print(images_config)
+    # print("Image config:")
+    # print(images_config)
 
     kCameraSensorId = images_config[1]
     cameraReading = CameraReading(sensorId=kCameraSensorId)
@@ -130,8 +130,8 @@ if check_file(args.sensors, "sensors"):
         f.close()
 
     sensors_config = [line.strip().split(', ') for line in lines]
-    print("Sensors config:")
-    print(sensors_config)
+    # print("Sensors config:")
+    # print(sensors_config)
 
     cameraReading.params.model = sensors_config[0][3]
     cameraReading.params.modelParams = sensors_config[0][4:]
@@ -149,8 +149,8 @@ if check_file(args.bt, "bt"):
         f.close()
 
     bt_config = [line.strip().split(', ') for line in lines]
-    print("Bluetooth config:")
-    print(bt_config)
+    # print("Bluetooth config:")
+    # print(bt_config)
 
     kBluetoothSensorId = bt_config[0][1]
     bluetoothReading = BluetoothReading(sensorId=kBluetoothSensorId)
@@ -167,8 +167,8 @@ if check_file(args.wifi, "wifi"):
         f.close()
 
     wifi_config = [line.strip().split(', ') for line in lines]
-    print("Wifi config:")
-    print(wifi_config)
+    # print("Wifi config:")
+    # print(wifi_config)
 
     kWifiSensorId = wifi_config[0][1]
     wifiReading = WiFiReading(sensorId=kWifiSensorId)
@@ -188,8 +188,8 @@ if check_file(args.trajectories, "trajectories"):
         f.close()
 
     trajectories_config = [line.strip().split(', ') for line in lines]
-    print("Trajectories config:")
-    print(trajectories_config)
+    # print("Trajectories config:")
+    # print(trajectories_config)
 
 # cameraReading.params = CameraParameters(model=camera_config["camera_model"], modelParams=camera_config["camera_params"])
 

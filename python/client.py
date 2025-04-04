@@ -44,12 +44,12 @@ def run_bash_command():
         # result = subprocess.run([bash_script_path], capture_output=True, text=True)
         # return jsonify({'output': result.stdout.strip()})
 
-        imagestxt_path = os.path.join(cur_dir, '../data/lamar/ios_2022-01-12_16.32.48_000_14911412476/images.txt')
-        sensors_path = os.path.join(cur_dir, '../data/lamar/ios_2022-01-12_16.32.48_000_14911412476/sensors.txt')
-        bt_path = os.path.join(cur_dir, '../data/lamar/ios_2022-01-12_16.32.48_000_14911412476/bt.txt')
-        wifi_path = os.path.join(cur_dir, '../data/lamar/ios_2022-01-12_16.32.48_000_14911412476/wifi.txt')
-        traj_path = os.path.join(cur_dir, '../data/lamar/ios_2022-01-12_16.32.48_000_14911412476/trajectories.txt')
-        out_path = os.path.join(cur_dir, '../data/lamar/out')
+        imagestxt_path ='./data/lamar/ios_2022-01-12_16.32.48_000_14911412476/images.txt'
+        sensors_path = './data/lamar/ios_2022-01-12_16.32.48_000_14911412476/sensors.txt'
+        bt_path = './data/lamar/ios_2022-01-12_16.32.48_000_14911412476/bt.txt'
+        wifi_path = './data/lamar/ios_2022-01-12_16.32.48_000_14911412476/wifi.txt'
+        traj_path = './data/lamar/ios_2022-01-12_16.32.48_000_14911412476/trajectories.txt'
+        out_path = './data/lamar/out'
 
         command = [
             'python3', 'demo_client.py',
@@ -63,6 +63,13 @@ def run_bash_command():
         ]
 
         result = subprocess.run(command, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            return jsonify({
+                'error': 'La commande a échoué',
+                'stderr': result.stderr.strip(),
+                'returncode': result.returncode
+            }), 500
 
         return jsonify({
             'stdout': result.stdout.strip(),
