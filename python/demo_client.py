@@ -24,12 +24,20 @@ from datetime import datetime, timezone
 
 ###print(json.dumps(GeoPoseRequest(), default=lambda o: o.__dict__))
 
+def get_base_url():
+    # Vérification si on est dans Docker
+    if os.path.exists('/.dockerenv'):
+        # On est dans un conteneur Docker, donc on garde l'URL interne du conteneur
+        return 'http://server:5000/geopose'
+    else:
+        # On est en local, donc on utilise 127.0.0.1
+        return 'http://127.0.0.1:5000/geopose'
 
 parser = ArgumentParser()
 parser.add_argument(
     '--url', '-url',
     type=str,
-    default='http://127.0.0.1:5000/geopose'
+    default=get_base_url()
 )
 parser.add_argument(
     '--image', '-image',
