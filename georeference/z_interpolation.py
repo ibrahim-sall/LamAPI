@@ -1,11 +1,7 @@
 import laspy
 from pyproj import Transformer
-from scipy.spatial import Delaunay
 import numpy as np
 import os
-import laspy
-import numpy as np
-from scipy.spatial import cKDTree
 from tqdm import tqdm
 
 
@@ -83,12 +79,6 @@ if __name__ == "__main__":
     else:
         print(f"Le fichier de sortie {output_txt} existe déjà. Conversion non nécessaire.")
 
-    # with laspy.open(input_las) as las_file:
-    #     las = las_file.read()
-    #     xy_points = np.column_stack((las.x, las.y, las.z))
-
-
-    
     query_points = np.array([[47.371298, 8.5411435], [47.37191374212907, 8.54109663480698], [47.37134209318172, 8.540975215978614]])
 
 

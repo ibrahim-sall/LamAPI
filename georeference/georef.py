@@ -1,11 +1,8 @@
-"""
-This module provides functionality to interpolate local reference points to WGS84 coordinates.
-
-It uses a least squares method to interpolate local coordinates to WGS84 latitude and longitude.
-"""
-
 import numpy as np
 from z_interpolation import get_elevation
+
+"""Here we defined our reference points in local and WGS84 coordinates 
+It comes from images that we placed on street view"""
 poses = [
     {
         "local": [29.523456169218413, -16.8032858715582, -3.745546205900862],
@@ -22,16 +19,25 @@ poses = [
 ]
 
 def elevation(poses):
+    """Calculates the elevation for each pose in WGS84 coordinates if there is no elevation value.
+
+    Args:
+        poses (_type_): Grounding thruth points for dataset
+
+    Returns:
+        _type_: poses with elevation values
+    """
     for pose in poses:
         x, y, z = pose["wgs84"]
         if z is None:
             pose["wgs84"][2] = get_elevation("/mnt/lamas/data/MNT/2683_1247.las",y, x)
     return poses
 
-def interpolate_to_wgs84(local_point):
+def interpolate_to_wgs84(local_point, poses):
     """
     Interpolates a local reference point to WGS84 coordinates using the three points in poses.
     """
+    poses = elevation(poses)
     local_coords = np.array([pose["local"] for pose in poses])
     wgs84_coords = np.array([pose["wgs84"] for pose in poses])
     local_mean = local_coords.mean(axis=0)
@@ -42,8 +48,8 @@ def interpolate_to_wgs84(local_point):
 
     return interpolated_wgs84
 
-INPUT_FILE = "/home/ibhou/Documents/visualPositionningSystem/LamAPI/georeference/LIN_poses.txt"
-OUTPUT_FILE = "/home/ibhou/Documents/visualPositionningSystem/LamAPI/georeference/output.txt"
+INPUT_FILE = "LIN_poses.txt"
+OUTPUT_FILE = "output.txt"
 
 if __name__ == "__main__":
     local_points = []
@@ -60,7 +66,7 @@ if __name__ == "__main__":
         file.write("# Interpolated WGS84 points with column2\n")
         file.write("# Format: column2, latitude, longitude, elevation\n")
         for local_point, column2 in zip(local_points, column2_values):
-            wgs84_point = interpolate_to_wgs84(local_point)
+            wgs84_point = interpolate_to_wgs84(local_point, poses)
             file.write(f"{column2}, {wgs84_point[0]}, {wgs84_point[1]}, {wgs84_point[2]}\n")
 
     print(f"Converted points with column2 have been saved to {OUTPUT_FILE}")
