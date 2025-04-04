@@ -2,6 +2,8 @@ from flask import Flask, jsonify, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
 import subprocess
 import os
+import json
+from collections import OrderedDict
 
 app = Flask(__name__)
 
@@ -66,11 +68,6 @@ def set_folder():
 @app.route('/run-bash', methods=['GET'])
 def run_bash_command():
     try:
-        # cur_dir = os.getcwd()
-        # bash_script_path = os.path.join(cur_dir, 'run-oscp-gpp-client.sh')
-        # result = subprocess.run([bash_script_path], capture_output=True, text=True)
-        # return jsonify({'output': result.stdout.strip()})
-
         imagestxt_path = os.path.join(selected_folder, 'images.txt')
         sensors_path = os.path.join(selected_folder, 'sensors.txt')
         bt_path = os.path.join(selected_folder, 'bt.txt')
@@ -90,7 +87,7 @@ def run_bash_command():
         ]
 
         result = subprocess.run(command, capture_output=True, text=True)
-
+        print(result)
         if result.returncode != 0:
             return jsonify({
                 'error': 'La commande a échoué',
@@ -98,12 +95,34 @@ def run_bash_command():
                 'returncode': result.returncode
             }), 500
 
-        return jsonify({
-            'stdout': result.stdout.strip(),
-        })
-    
+        # Split the output by lines
+        output_lines = result.stdout.splitlines()
+        
+        # Let's attempt to parse the first line as JSON
+        try:
+            # Assuming that the first line contains the JSON data
+            # If output_lines[1] is a valid JSON string, it can be loaded into a dictionary
+            json_data = json.loads(output_lines[1])  # Convert the JSON string to a Python dictionary
+        except Exception as e:
+            return jsonify({
+                'error': 'Erreur de décodage JSON',
+                'message': str(e)
+            }), 500
+        
+        # Utilisation d'OrderedDict pour garantir l'ordre des clés
+        ordered_data = OrderedDict([
+            ('type', json_data.get('type')),
+            ('id', json_data.get('id')),
+            ('timestamp', json_data.get('timestamp')),
+            ('geopose', json_data.get('geopose'))
+        ])
+
+        # Renvoie le JSON avec l'ordre des clés souhaité
+        return jsonify(ordered_data)
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080, host='0.0.0.0')
