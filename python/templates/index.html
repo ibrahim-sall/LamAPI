@@ -11,10 +11,16 @@
     <h1>Lamar API</h1>
 </header>
 <div class="container">
+    <h2>Choisir l'image à GeoPoser</h2>
     <input type="file" id="imageInput" accept="image/*" onchange="uploadImage()">
-    <button onclick="runCommand()">Run Command</button>
     <p id="image"></p>
     <img id="preview" src="" alt="Aperçu de l'image" style="max-width: 300px; display: none;">
+
+    <h2>Choisir un dossier contenant les fichiers GeoPose</h2>
+    <input type="file" id="folderInput" onchange="uploadFolderPath()" webkitdirectory directory multiple >
+    <p id="folderPath"></p>
+
+    <button onclick="runCommand()">Run Command</button>
     <div id="status" class="status"></div>
     <div id="output" class="output"></div>
 </div>
@@ -47,6 +53,34 @@
         .catch(error => {
             console.error("Erreur upload :", error);
             document.getElementById('image').innerText = "Erreur d'upload.";
+        });
+    }
+
+    function uploadFolderPath() {
+        const input = document.getElementById('folderInput');
+        const files = input.files;
+
+        if (!files.length) {
+            alert("Veuillez choisir un dossier.");
+            return;
+        }
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i], files[i].webkitRelativePath);
+        }
+
+        fetch("/set-folder", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("folderPath").innerText = "Dossier sélectionné : " + data.folder;
+        })
+        .catch(err => {
+            console.error(err);
+            document.getElementById("folderPath").innerText = "Erreur lors de l'envoi du dossier.";
         });
     }
 
