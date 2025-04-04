@@ -8,6 +8,8 @@ import numpy as np
 from scipy.spatial import cKDTree
 from tqdm import tqdm
 
+
+
 def convert_las_to_wgs84(input_las, output_txt):
     """
     Convertit les coordonnées d'un fichier LAS (EPSG:2056) en WGS84 et extrait les coordonnées Z.
@@ -31,45 +33,15 @@ def convert_las_to_wgs84(input_las, output_txt):
 
     print(f"Conversion terminée. Les coordonnées WGS84 ont été enregistrées dans {output_txt}")
 
-def interpolate_z_from_xy(xy_points, query_points):
-    """
-    Interpole les coordonnées Z à partir des coordonnées X et Y en utilisant une interpolation triangulaire.
-
-    Args:
-        xy_points (np.ndarray): Tableau de points (X, Y, Z) où Z est connu.
-        query_points (np.ndarray): Tableau de points (X, Y) pour lesquels Z doit être interpolé.
-
-    Returns:
-        np.ndarray: Coordonnées Z interpolées pour les points de requête.
-    """
-    xy = xy_points[:, :2] 
-    z = xy_points[:, 2] 
-
-    delaunay = Delaunay(xy)
-
-    simplices = delaunay.find_simplex(query_points)
-
-    interpolated_z = np.full(len(query_points), np.nan)
-
-    for i, simplex in enumerate(simplices):
-        if (simplex == -1):
-        
-            continue
-        vertices = delaunay.simplices[simplex]
-        bary_coords = delaunay.transform[simplex, :2].dot(query_points[i] - delaunay.transform[simplex, 2])
-        bary_coords = np.append(bary_coords, 1 - bary_coords.sum())
-        interpolated_z[i] = np.dot(bary_coords, z[vertices])
-
-    return interpolated_z
 
 def get_elevation(las_file, x, y):
     """
     Extracts the elevation (Z) value for a given (X, Y) coordinate from a LAS file.
 
     Args:
-        las_file (str): Path to the LAS file.
-        x (float): X coordinate (longitude or easting).
-        y (float): Y coordinate (latitude or northing).
+        las_file (str): Path to the LAS file. _________EPSG 2056________
+        x (float): X coordinate (longitude or easting)._________EPSG 4326________
+        y (float): Y coordinate (latitude or northing)._________EPSG 4326________
 
     Returns:
         float: Elevation (Z) value at the given (X, Y) coordinate.
@@ -116,13 +88,11 @@ if __name__ == "__main__":
     #     xy_points = np.column_stack((las.x, las.y, las.z))
 
 
-    transformer = Transformer.from_crs("EPSG:4326", "EPSG:2056", always_xy=True)
     
     query_points = np.array([[47.371298, 8.5411435], [47.37191374212907, 8.54109663480698], [47.37134209318172, 8.540975215978614]])
-    
-    query_points_2056 = np.array([transformer.transform(lon, lat) for lon, lat in query_points])
 
-    for i, (x, y) in enumerate(query_points_2056):
-        z = get_elevation(input_las, x, y)
+
+    for i, (x, y) in enumerate(query_points):
+        z = get_elevation(input_las, y, x)
         print(f"Elevation at WGS84 ({query_points[i][0]}, {query_points[i][1]}) / EPSG:2056 ({x}, {y}) is: {z}")
 

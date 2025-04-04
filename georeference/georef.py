@@ -9,21 +9,24 @@ from z_interpolation import get_elevation
 poses = [
     {
         "local": [29.523456169218413, -16.8032858715582, -3.745546205900862],
-        "wgs84": [47.371298, 8.5411435, None]
+        "wgs84": [47.371298, 8.5411435, 423.58]
     },
     {
         "local": [8.437905948692272, 47.39317759366658, -2.984379281961243],
-        "wgs84": [47.37191374212907, 8.54109663480698, None]
+        "wgs84": [47.37191374212907, 8.54109663480698, 411.74]
     },
     {
         "local": [14.209544997177384, -14.455533619628929, 0.6761970895122704],
-        "wgs84": [47.37134209318172, 8.540975215978614, None]
+        "wgs84": [47.37134209318172, 8.540975215978614, 415.62]
     }
 ]
 
-for pose in poses:
-    x, y, z = pose["wgs84"]
-    pose["wgs84"][2] = get_elevation("/mnt/lamas/data/MNT/2683_1247.las",y, x)
+def elevation(poses):
+    for pose in poses:
+        x, y, z = pose["wgs84"]
+        if z is None:
+            pose["wgs84"][2] = get_elevation("/mnt/lamas/data/MNT/2683_1247.las",y, x)
+    return poses
 
 def interpolate_to_wgs84(local_point):
     """
