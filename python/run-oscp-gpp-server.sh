@@ -4,8 +4,6 @@ CUR_DIR=$(pwd)
 
 # Set these variables:
 
-CONFIG_PATH=$CUR_DIR/../data/seattle_vps.json #a remplacer
-
 IMAGE_NAME="ghcr.io/microsoft/lamar-benchmark/lamar"
 
 
@@ -23,4 +21,4 @@ else
 fi
 
 
-python3 demo_server.py --config $CONFIG_PATH -output_path volume_output
+python3 demo_server.py -output_path volume_output

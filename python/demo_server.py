@@ -16,12 +16,6 @@ from demo_docker import *
 
 parser = ArgumentParser()
 parser.add_argument(
-    '--config', '-config',
-    type=str,
-    required = True,
-    default = None
-)
-parser.add_argument(
     '--output_path', '-output_path',
     type=str,
     required=True,
@@ -37,13 +31,6 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
-
-with open(args.config, 'r') as f:
-    config = json.load(f)
-    f.close()
-print("Server config:")
-print(config)
-
 
 app = Flask(__name__)
 
