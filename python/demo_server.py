@@ -92,7 +92,7 @@ def localize():
 
     try:
         write_data(imgdata, geoPoseRequest)
-        cmd = create_docker_command_lamar(args.output_path, args.output_path,scene="OUT")
+        cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
         run_docker_command(cmd)
         response = make_response(geoPoseResponse.toJson(), 200)
     except Exception as e:

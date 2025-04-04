@@ -24,7 +24,7 @@ def run_docker_command(command:list):
     try:
         # Exécuter la commande Docker
         print(f"Exécution de la commande: {' '.join(command)}")
-        subprocess.run(command, check=True)
+        subprocess.run(command, check=True, shell=True)
     except subprocess.CalledProcessError as e:
         print(f"Erreur lors de l'exécution de la commande Docker: {e}")
     except Exception as e:
