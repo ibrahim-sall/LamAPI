@@ -1,0 +1,173 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "title": "GeoPose API",
+      "description": "API pour la localisation et le statut du service GeoPose.",
+      "version": "1.0.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "schemes": [
+      "http"
+    ],
+    "paths": {
+      "/geopose": {
+        "get": {
+          "summary": "Retourne le statut du service",
+          "operationId": "getStatus",
+          "tags": ["GeoPose"],
+          "responses": {
+            "200": {
+              "description": "Le service fonctionne correctement",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "example": "running"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "summary": "Localise la position à partir des données envoyées",
+          "operationId": "localize",
+          "tags": ["GeoPose"],
+          "parameters": [
+            {
+              "name": "body",
+              "in": "body",
+              "description": "Les données de localisation et les lectures des capteurs.",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/GeoPoseRequest"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Localisation réussie",
+              "schema": {
+                "$ref": "#/definitions/GeoPoseResponse"
+              }
+            },
+            "400": {
+              "description": "Mauvaise requête (par exemple, données manquantes)",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "error": {
+                    "type": "string",
+                    "example": "request has no camera readings"
+                  }
+                }
+              }
+            },
+            "500": {
+              "description": "Erreur interne du serveur",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "error": {
+                    "type": "string",
+                    "example": "Failed to write data"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "GeoPoseRequest": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "12345"
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2025-04-04T12:00:00Z"
+          },
+          "sensorReadings": {
+            "type": "object",
+            "properties": {
+              "cameraReadings": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "imageBytes": {
+                      "type": "string",
+                      "example": "base64encodedstring"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "GeoPoseResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "12345"
+          },
+          "timestamp": {
+            "type": "string",
+            "example": "2025-04-04T12:00:00Z"
+          },
+          "geopose": {
+            "type": "object",
+            "properties": {
+              "quaternion": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "example": 0.0
+                  },
+                  "y": {
+                    "type": "number",
+                    "example": 0.0
+                  },
+                  "z": {
+                    "type": "number",
+                    "example": 0.0
+                  },
+                  "w": {
+                    "type": "number",
+                    "example": 1.0
+                  }
+                }
+              },
+              "position": {
+                "type": "object",
+                "properties": {
+                  "lat": {
+                    "type": "number",
+                    "example": 48.8584
+                  },
+                  "lon": {
+                    "type": "number",
+                    "example": 2.2945
+                  },
+                  "h": {
+                    "type": "number",
+                    "example": 10.0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  

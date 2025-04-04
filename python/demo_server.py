@@ -13,7 +13,7 @@ import base64
 import os
 import json
 from oscp.geoposeprotocol import *
-
+from flask_swagger_ui import get_swaggerui_blueprint
 
 parser = ArgumentParser()
 parser.add_argument(
@@ -48,15 +48,28 @@ print(config)
 
 app = Flask(__name__)
 
+
+# Swagger UI route
+SWAGGER_URL = '/swagger'
+API_URL = '/static/swagger.json'
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={
+        'app_name': "My API",
+        'additionalQueryStringParams': {
+            'config': '.',  
+            'output': 'path/volume_output'  
+        }
+    }
+)
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
+##################################################
+
 @app.route('/geopose', methods=['GET'])
 def status():
     return make_response("{\"status\": \"running\"}", 200)
-
-@app.route('/geopose/spec', methods=['POST'])
-def spec():
-    base_path = os.path.join(app.root_path, 'docs')
-    return jsonify(swagger(app), from_file_keyword="swagger_from_file", base_path=base_path)
-
 
 @app.route('/geopose', methods=['POST'])
 def localize():
