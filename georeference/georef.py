@@ -40,18 +40,20 @@ OUTPUT_FILE = "/home/ibhou/Documents/visualPositionningSystem/LamAPI/georeferenc
 
 if __name__ == "__main__":
     local_points = []
+    column2_values = []
     with open(INPUT_FILE, "r", encoding="utf-8") as file:
         for line in file:
             if not line.strip() or line.startswith("#") or line.startswith("//"):
                 continue
             parts = line.split(",")
+            column2_values.append(parts[1].strip())
             local_points.append([float(parts[6]), float(parts[7]), float(parts[8])])
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
-        file.write("# Interpolated WGS84 points\n")
-        file.write("# Format: latitude, longitude\n")
-        for local_point in local_points:
+        file.write("# Interpolated WGS84 points with column2\n")
+        file.write("# Format: column2, latitude, longitude\n")
+        for local_point, column2 in zip(local_points, column2_values):
             wgs84_point = interpolate_to_wgs84(local_point)
-            file.write(f"{wgs84_point[0]}, {wgs84_point[1]}\n")
+            file.write(f"{column2}, {wgs84_point[0]}, {wgs84_point[1]}\n")
 
-    print(f"Converted points have been saved to {OUTPUT_FILE}")
+    print(f"Converted points with column2 have been saved to {OUTPUT_FILE}")
