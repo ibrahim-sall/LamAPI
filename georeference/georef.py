@@ -5,21 +5,25 @@ It uses a least squares method to interpolate local coordinates to WGS84 latitud
 """
 
 import numpy as np
-
+from z_interpolation import get_elevation
 poses = [
     {
         "local": [29.523456169218413, -16.8032858715582, -3.745546205900862],
-        "wgs84": [47.371298, 8.5411435]
+        "wgs84": [47.371298, 8.5411435, None]
     },
     {
         "local": [8.437905948692272, 47.39317759366658, -2.984379281961243],
-        "wgs84": [47.37191374212907, 8.54109663480698]
+        "wgs84": [47.37191374212907, 8.54109663480698, None]
     },
     {
         "local": [14.209544997177384, -14.455533619628929, 0.6761970895122704],
-        "wgs84": [47.37134209318172, 8.540975215978614]
+        "wgs84": [47.37134209318172, 8.540975215978614, None]
     }
 ]
+
+for pose in poses:
+    x, y, z = pose["wgs84"]
+    pose["wgs84"][2] = get_elevation("/mnt/lamas/data/MNT/2683_1247.las",y, x)
 
 def interpolate_to_wgs84(local_point):
     """
@@ -51,9 +55,9 @@ if __name__ == "__main__":
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
         file.write("# Interpolated WGS84 points with column2\n")
-        file.write("# Format: column2, latitude, longitude\n")
+        file.write("# Format: column2, latitude, longitude, elevation\n")
         for local_point, column2 in zip(local_points, column2_values):
             wgs84_point = interpolate_to_wgs84(local_point)
-            file.write(f"{column2}, {wgs84_point[0]}, {wgs84_point[1]}\n")
+            file.write(f"{column2}, {wgs84_point[0]}, {wgs84_point[1]}, {wgs84_point[2]}\n")
 
     print(f"Converted points with column2 have been saved to {OUTPUT_FILE}")
