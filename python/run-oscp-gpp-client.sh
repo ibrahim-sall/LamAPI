@@ -16,4 +16,4 @@ OUT_PATH=$CUR_DIR/../data/lamar/out
 # GEOLOCATION_PARAMS_PATH=$CUR_DIR/../data/seattle_geolocation_params.json
 
 # python demo_client.py $IMAGE_PATH $CAMERA_PARAMS_PATH $GEOLOCATION_PARAMS_PATH
-python demo_client.py --image $IMAGE_PATH --imagestxt $IMAGESTXT_PATH --sensors $SENSORS_PATH --bt $BT_PATH --wifi $WIFI_PATH --trajectories $TRAJ_PATJ --output $OUT_PATH
+python3 demo_client.py --image $IMAGE_PATH --imagestxt $IMAGESTXT_PATH --sensors $SENSORS_PATH --bt $BT_PATH --wifi $WIFI_PATH --trajectories $TRAJ_PATJ --output $OUT_PATH
