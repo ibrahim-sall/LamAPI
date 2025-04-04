@@ -86,7 +86,7 @@ args=parser.parse_args()
 
 def check_file(path, name):
     if not os.path.isfile(path):
-        print(f"Erreur : le fichier {name} n'existe pas à l'emplacement : {path}")
+        # print(f"Erreur : le fichier {name} n'existe pas à l'emplacement : {path}")
         return False
     return True
 
@@ -216,7 +216,7 @@ def write_output(geoposeresponse):
 
     if (args.output):
         file_path=args.output+"/output.json"
-        print(args.output)
+        # print(args.output)
         with open(file_path,"w") as f:
             f.write(geoposeresponse.toJson())
             f.close()
