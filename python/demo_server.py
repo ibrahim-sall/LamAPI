@@ -56,7 +56,7 @@ swaggerui_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL,
     API_URL,
     config={
-        'app_name': "My API",
+        'app_name': "LamAPI",
         'additionalQueryStringParams': {
             'config': '.',  
             'output': 'path/volume_output'  
@@ -73,10 +73,7 @@ def status():
 
 @app.route('/geopose', methods=['POST'])
 def localize():
-    """
-    swagger_from_file: test.yml
-    """
-        
+
     jdata = request.get_json()
     geoPoseRequest = GeoPoseRequest.fromJson(jdata)
 
@@ -85,6 +82,7 @@ def localize():
     if geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes is None:
         abort(400, description='request has no image')
     imgdata = base64.b64decode(geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes)
+
     # DEBUG
     #print("Request:")
     #print(geoPoseRequest.toJson())
