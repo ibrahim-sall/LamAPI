@@ -27,8 +27,8 @@ parser.add_argument(
     '--dataset', '-dataset',
     type=str,
     required=False,
-    default='CAB',
-    help='Specify the dataset to use between {CAB, LIN, HGE}. Default is "CAB".'
+    default='LIN',
+    help='Specify the dataset to use between {CAB, LIN, HGE}. Default is "LIN".'
 )
 
 args = parser.parse_args()
