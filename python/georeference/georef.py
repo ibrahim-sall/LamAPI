@@ -1,5 +1,5 @@
 import numpy as np
-from georeference.z_interpolation import get_elevation
+from .z_interpolation import get_elevation
 
 """Here we defined our reference points in local and WGS84 coordinates 
 It comes from images that we placed on street view"""
@@ -78,12 +78,12 @@ def convert_to_wgs84(tx, ty, tz, poses = poses):
     return wgs84_point
     
     
-def convert_file(input = "./georeference/LIN_poses.txt", output = "./georeference/output.txt", poses = poses):
+def convert_file(input = "LIN_poses.txt", output = "output.txt", poses = poses):
     """Convert a whole file of poses (that need to be product with lamar-benchmarl) to WGS84 coordinates.
 
     Args:
-        input (str, optional): path of input poses.txt. Defaults to "./georeference/LIN_poses.txt".
-        output (str, optional): path of output file. Defaults to "./georeference/output.txt".
+        input (str, optional): path of input poses.txt. Defaults to "LIN_poses.txt".
+        output (str, optional): path of output file. Defaults to "output.txt".
         
     """
     local_points = []

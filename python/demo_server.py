@@ -13,7 +13,7 @@ import os
 import json
 from oscp.geoposeprotocol import *
 from demo_docker import *
-from georep import convert_to_wgs84
+from georeference.georef import convert_to_wgs84 
 
 parser = ArgumentParser()
 parser.add_argument(
@@ -78,10 +78,10 @@ def localize():
     geoPose.quaternion.y = last_line[4]
     geoPose.quaternion.z = last_line[5]
     geoPose.quaternion.w = last_line[2]
-        
+    print(last_line[6], last_line[7], last_line[8])
     ###Convertt to WGS84
   
-    geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(last_line[6], last_line[7], last_line[8])
+    geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(float(last_line[6]), float(last_line[7]), float(last_line[8]))
 
     geoPoseResponse = GeoPoseResponse(id = geoPoseRequest.id, timestamp = geoPoseRequest.timestamp)
     geoPoseResponse.geopose = geoPose
