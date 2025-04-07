@@ -1,5 +1,5 @@
 import numpy as np
-from z_interpolation import get_elevation
+from georeference.z_interpolation import get_elevation
 
 """Here we defined our reference points in local and WGS84 coordinates 
 It comes from images that we placed on street view"""
@@ -17,6 +17,17 @@ poses = [
         "wgs84": [47.37134209318172, 8.540975215978614, 415.62]
     }
 ]
+def get_weights(local_point, poses):
+    """Calculates the weights for each pose based on the local coordinates and WGS84 correspondance.
+
+    Args:
+        poses (_type_): _description_
+    """
+    poses = elevation(poses)
+    local_coords = np.array([pose["local"] for pose in poses])
+    local_mean = local_coords.mean(axis=0)
+
+    return np.linalg.lstsq(local_coords - local_mean, local_point - local_mean, rcond=None)[0]
 
 def elevation(poses):
     """Calculates the elevation for each pose in WGS84 coordinates if there is no elevation value.
@@ -37,17 +48,22 @@ def interpolate_to_wgs84(local_point, poses):
     """
     Interpolates a local reference point to WGS84 coordinates using the three points in poses.
     """
-    poses = elevation(poses)
-    local_coords = np.array([pose["local"] for pose in poses])
     wgs84_coords = np.array([pose["wgs84"] for pose in poses])
-    local_mean = local_coords.mean(axis=0)
     wgs84_mean = wgs84_coords.mean(axis=0)
-
-    weights = np.linalg.lstsq(local_coords - local_mean, local_point - local_mean, rcond=None)[0]
+    weights = get_weights(local_point, poses)
+    
     interpolated_wgs84 = wgs84_mean + np.dot(weights, wgs84_coords - wgs84_mean)
 
     return interpolated_wgs84
 
+
+
+def convert_to_wgs84(tx, ty, elevation):
+    """
+    Converts local coordinates to WGS84 coordinates.
+    """
+    
+    
 
 if __name__ == "__main__":
     
