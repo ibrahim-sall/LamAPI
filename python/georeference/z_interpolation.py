@@ -8,11 +8,11 @@ from tqdm import tqdm
 
 def convert_las_to_wgs84(input_las, output_txt):
     """
-    Convertit les coordonnées d'un fichier LAS (EPSG:2056) en WGS84 et extrait les coordonnées Z.
+    Converts the coordinates of a LAS file (EPSG:2056) to WGS84 and extracts the Z coordinates.
 
     Args:
-        input_las (str): Chemin vers le fichier LAS en EPSG:2056.
-        output_txt (str): Chemin vers le fichier de sortie contenant les coordonnées WGS84.
+        input_las (str): Path to the LAS file in EPSG:2056.
+        output_txt (str): Path to the output file containing WGS84 coordinates.
     """
     transformer = Transformer.from_crs("EPSG:2056", "EPSG:4326", always_xy=True)
 
@@ -23,11 +23,11 @@ def convert_las_to_wgs84(input_las, output_txt):
         lon, lat, alt = transformer.transform(x, y, z)
 
         with open(output_txt, "w", encoding="utf-8") as f:
-            f.write("# Longitude, Latitude, Altitude (WGS84)\n")
+            f.write("# Lon, Lat, Elevation (WGS84)\n")
             for lon_val, lat_val, alt_val in zip(lon, lat, alt):
                 f.write(f"{lon_val}, {lat_val}, {alt_val}\n")
 
-    print(f"Conversion terminée. Les coordonnées WGS84 ont été enregistrées dans {output_txt}")
+    print(f"Conversion completed. The WGS84 coordinates have been saved in {output_txt}")
 
 
 def get_elevation(las_file, x, y):
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     if not os.path.exists(output_txt):
         convert_las_to_wgs84(input_las, output_txt)
     else:
-        print(f"Le fichier de sortie {output_txt} existe déjà. Conversion non nécessaire.")
+        print(f"The output file {output_txt} already exists. Conversion not required.")
 
     query_points = np.array([[47.371298, 8.5411435], [47.37191374212907, 8.54109663480698], [47.37134209318172, 8.540975215978614]])
 
