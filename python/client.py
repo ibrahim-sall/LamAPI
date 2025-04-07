@@ -127,15 +127,10 @@ def run_bash_command():
         
 
         # Utilisation d'OrderedDict pour garantir l'ordre des clés
-        ordered_data = OrderedDict([
-            ('type', json_data.get('type')),    
-            ('id', json_data.get('id')),
-            ('timestamp', json_data.get('timestamp')),
-            ('geopose', json_data.get('geopose'))
-        ])
+        ordered_data = {'type':json_data.get('type'),'id':json_data.get('id'),'timestamp':json_data.get('timestamp'),'geopose':json_data.get('geopose')}
 
         # Renvoie le JSON avec l'ordre des clés souhaité
-        return jsonify(ordered_data)
+        return ordered_data
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

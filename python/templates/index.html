@@ -108,12 +108,21 @@
             .then(data => {
                 const outputDiv = document.getElementById('output');
 
+                const orderedData = {
+                    "type": data.type,
+                    "id": data.id,
+                    "timestamp": data.timestamp,
+                    "geopose": data.geopose
+                };
+
+                const formattedData = JSON.stringify(orderedData, null, 4);
+
                 if (data.output) {
                     outputDiv.innerHTML = `<pre>${data.output}</pre>`;
                 } else if (data.error) {
                     outputDiv.innerHTML = `<pre>${data.error}</pre>`;
                 } else {
-                    outputDiv.innerHTML = `<pre>${JSON.stringify(data, null, 4)}</pre>`;
+                    outputDiv.innerHTML = `<pre>${formattedData}</pre>`;
                 }
             })
             .catch(error => {
