@@ -1,5 +1,5 @@
 import numpy as np
-from z_interpolation import get_elevation
+from georeference.z_interpolation import get_elevation
 
 """Here we defined our reference points in local and WGS84 coordinates 
 It comes from images that we placed on street view"""
@@ -18,14 +18,30 @@ poses = [
     }
 ]
 
-def elevation(poses):
+
+def get_weights(local_point, poses = poses):
+    """Calculates the weights for each pose based on the local coordinates and WGS84 correspondance.
+
+    Args:
+        poses (dic): Grounding thruth points for dataset
+        
+    Returns:
+        list: Weights for each pose.
+    """
+    poses = elevation()
+    local_coords = np.array([pose["local"] for pose in poses])
+    local_mean = local_coords.mean(axis=0)
+
+    return np.linalg.lstsq(local_coords - local_mean, local_point - local_mean, rcond=None)[0]
+
+def elevation(poses = poses):
     """Calculates the elevation for each pose in WGS84 coordinates if there is no elevation value.
 
     Args:
-        poses (_type_): Grounding thruth points for dataset
+        poses (dic): Grounding thruth points for dataset
 
     Returns:
-        _type_: poses with elevation values
+        poses (dic): poses with elevation values
     """
     for pose in poses:
         x, y, z = pose["wgs84"]
@@ -36,25 +52,43 @@ def elevation(poses):
 def interpolate_to_wgs84(local_point, poses):
     """
     Interpolates a local reference point to WGS84 coordinates using the three points in poses.
-    """
-    poses = elevation(poses)
-    local_coords = np.array([pose["local"] for pose in poses])
-    wgs84_coords = np.array([pose["wgs84"] for pose in poses])
-    local_mean = local_coords.mean(axis=0)
-    wgs84_mean = wgs84_coords.mean(axis=0)
+    
+    Args:
+        local_point (list): Local coordinates to be converted.
 
-    weights = np.linalg.lstsq(local_coords - local_mean, local_point - local_mean, rcond=None)[0]
+    Returns:
+        list: WGS84 coordinates.
+    """
+    wgs84_coords = np.array([pose["wgs84"] for pose in poses])
+    wgs84_mean = wgs84_coords.mean(axis=0)
+    weights = get_weights(local_point, poses)
+    
     interpolated_wgs84 = wgs84_mean + np.dot(weights, wgs84_coords - wgs84_mean)
 
     return interpolated_wgs84
 
-INPUT_FILE = "LIN_poses.txt"
-OUTPUT_FILE = "output.txt"
 
-if __name__ == "__main__":
+
+def convert_to_wgs84(tx, ty, tz, poses = poses):
+    """
+    Converts local coordinates to WGS84 coordinates.
+    """
+    local_point = np.array([tx, ty, tz])
+    wgs84_point = interpolate_to_wgs84(local_point, poses)
+    return wgs84_point
+    
+    
+def convert_file(input = "./georeference/LIN_poses.txt", output = "./georeference/output.txt", poses = poses):
+    """Convert a whole file of poses (that need to be product with lamar-benchmarl) to WGS84 coordinates.
+
+    Args:
+        input (str, optional): path of input poses.txt. Defaults to "./georeference/LIN_poses.txt".
+        output (str, optional): path of output file. Defaults to "./georeference/output.txt".
+        
+    """
     local_points = []
     column2_values = []
-    with open(INPUT_FILE, "r", encoding="utf-8") as file:
+    with open(input, "r", encoding="utf-8") as file:
         for line in file:
             if not line.strip() or line.startswith("#") or line.startswith("//"):
                 continue
@@ -62,11 +96,20 @@ if __name__ == "__main__":
             column2_values.append(parts[1].strip())
             local_points.append([float(parts[6]), float(parts[7]), float(parts[8])])
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
+    with open(output, "w", encoding="utf-8") as file:
         file.write("# Interpolated WGS84 points with column2\n")
         file.write("# Format: column2, latitude, longitude, elevation\n")
         for local_point, column2 in zip(local_points, column2_values):
             wgs84_point = interpolate_to_wgs84(local_point, poses)
             file.write(f"{column2}, {wgs84_point[0]}, {wgs84_point[1]}, {wgs84_point[2]}\n")
 
-    print(f"Converted points with column2 have been saved to {OUTPUT_FILE}")
+    print(f"Converted points with column2 have been saved to {output}")
+    
+
+if __name__ == "__main__":
+        
+    tx, ty, tz = 87.19216054872965, -58.229433377117175, -1.8841856889721933
+    wgs84_coords = convert_to_wgs84(tx, ty, tz)
+    print(f"WGS84 Coordinates: {wgs84_coords}")
+
+    convert_file()
