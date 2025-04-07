@@ -58,11 +58,11 @@ def localize():
     cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
     run_docker_command(cmd)
 
-    POSES_FILE = '/output/CAB/pose_estimation/query_phone/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single/poses.txt'
+    POSES_FILE = '/output/CAB/pose_estimation/query_phone/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt'
 
-    if not os.path.exists('./data/poses.txt'):
+    if not os.path.exists(POSES_FILE):
         return make_response(jsonify({"error": "The file './poses.txt' does not exist."}), 500)
-    with open('./data/poses.txt', "r") as f:
+    with open(POSES_FILE, "r") as f:
         f.seek(0, 2)
         while f.tell() > 0:
             f.seek(f.tell() - 2, 0)
