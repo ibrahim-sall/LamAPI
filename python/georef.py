@@ -23,7 +23,10 @@ def get_weights(local_point, poses = poses):
     """Calculates the weights for each pose based on the local coordinates and WGS84 correspondance.
 
     Args:
-        poses (_type_): _description_
+        poses (dic): Grounding thruth points for dataset
+        
+    Returns:
+        list: Weights for each pose.
     """
     poses = elevation()
     local_coords = np.array([pose["local"] for pose in poses])
@@ -35,10 +38,10 @@ def elevation(poses = poses):
     """Calculates the elevation for each pose in WGS84 coordinates if there is no elevation value.
 
     Args:
-        poses (_type_): Grounding thruth points for dataset
+        poses (dic): Grounding thruth points for dataset
 
     Returns:
-        _type_: poses with elevation values
+        poses (dic): poses with elevation values
     """
     for pose in poses:
         x, y, z = pose["wgs84"]
@@ -49,6 +52,12 @@ def elevation(poses = poses):
 def interpolate_to_wgs84(local_point, poses):
     """
     Interpolates a local reference point to WGS84 coordinates using the three points in poses.
+    
+    Args:
+        local_point (list): Local coordinates to be converted.
+
+    Returns:
+        list: WGS84 coordinates.
     """
     wgs84_coords = np.array([pose["wgs84"] for pose in poses])
     wgs84_mean = wgs84_coords.mean(axis=0)
@@ -70,6 +79,13 @@ def convert_to_wgs84(tx, ty, tz, poses = poses):
     
     
 def convert_file(input = "./georeference/LIN_poses.txt", output = "./georeference/output.txt", poses = poses):
+    """Convert a whole file of poses (that need to be product with lamar-benchmarl) to WGS84 coordinates.
+
+    Args:
+        input (str, optional): path of input poses.txt. Defaults to "./georeference/LIN_poses.txt".
+        output (str, optional): path of output file. Defaults to "./georeference/output.txt".
+        
+    """
     local_points = []
     column2_values = []
     with open(input, "r", encoding="utf-8") as file:
