@@ -27,7 +27,7 @@ parser.add_argument(
     '--dataset', '-dataset',
     type=str,
     required=False,
-    default='CAB',
+    default='LIN,
     help='Specify the dataset to use between {CAB, LIN, HGE}. Default is "CAB".'
 )
 
