@@ -17,6 +17,7 @@ poses = [
         "wgs84": [47.37134209318172, 8.540975215978614, 415.62]
     }
 ]
+
 def get_weights(local_point, poses):
     """Calculates the weights for each pose based on the local coordinates and WGS84 correspondance.
 
@@ -62,6 +63,9 @@ def convert_to_wgs84(tx, ty, elevation):
     """
     Converts local coordinates to WGS84 coordinates.
     """
+    local_point = np.array([tx, ty, elevation])
+    wgs84_point = interpolate_to_wgs84(local_point, poses)
+    return wgs84_point[0], wgs84_point[1], wgs84_point[2]
     
     
 
