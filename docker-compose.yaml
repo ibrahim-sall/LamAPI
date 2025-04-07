@@ -26,6 +26,7 @@ services:
       - server
 volumes:
   output_volume:
+    external: true
 networks:
   reseau:
     driver: bridge
