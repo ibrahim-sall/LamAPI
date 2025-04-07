@@ -48,10 +48,11 @@ def interpolate_to_wgs84(local_point, poses):
 
     return interpolated_wgs84
 
-INPUT_FILE = "LIN_poses.txt"
-OUTPUT_FILE = "output.txt"
 
 if __name__ == "__main__":
+    
+    INPUT_FILE = "LIN_poses.txt"
+    OUTPUT_FILE = "output.txt"
     local_points = []
     column2_values = []
     with open(INPUT_FILE, "r", encoding="utf-8") as file:
