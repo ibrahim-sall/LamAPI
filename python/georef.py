@@ -68,14 +68,10 @@ def convert_to_wgs84(tx, ty, elevation):
     return wgs84_point[0], wgs84_point[1], wgs84_point[2]
     
     
-
-if __name__ == "__main__":
-    
-    INPUT_FILE = "LIN_poses.txt"
-    OUTPUT_FILE = "output.txt"
+def convert_file(input = "./georeference/LIN_poses.txt", output = "./georeference/output.txt"):
     local_points = []
     column2_values = []
-    with open(INPUT_FILE, "r", encoding="utf-8") as file:
+    with open(input, "r", encoding="utf-8") as file:
         for line in file:
             if not line.strip() or line.startswith("#") or line.startswith("//"):
                 continue
@@ -83,11 +79,20 @@ if __name__ == "__main__":
             column2_values.append(parts[1].strip())
             local_points.append([float(parts[6]), float(parts[7]), float(parts[8])])
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as file:
+    with open(output, "w", encoding="utf-8") as file:
         file.write("# Interpolated WGS84 points with column2\n")
         file.write("# Format: column2, latitude, longitude, elevation\n")
         for local_point, column2 in zip(local_points, column2_values):
             wgs84_point = interpolate_to_wgs84(local_point, poses)
             file.write(f"{column2}, {wgs84_point[0]}, {wgs84_point[1]}, {wgs84_point[2]}\n")
 
-    print(f"Converted points with column2 have been saved to {OUTPUT_FILE}")
+    print(f"Converted points with column2 have been saved to {output}")
+    
+
+if __name__ == "__main__":
+    
+    tx, ty, elevation = 87.19216054872965, -58.229433377117175, -1.8841856889721933
+    wgs84_coords = convert_to_wgs84(tx, ty, elevation)
+    print(f"WGS84 Coordinates: {wgs84_coords}")
+
+    #convert_file()
