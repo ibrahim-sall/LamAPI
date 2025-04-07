@@ -18,19 +18,20 @@ poses = [
     }
 ]
 
-def get_weights(local_point, poses):
+
+def get_weights(local_point, poses = poses):
     """Calculates the weights for each pose based on the local coordinates and WGS84 correspondance.
 
     Args:
         poses (_type_): _description_
     """
-    poses = elevation(poses)
+    poses = elevation()
     local_coords = np.array([pose["local"] for pose in poses])
     local_mean = local_coords.mean(axis=0)
 
     return np.linalg.lstsq(local_coords - local_mean, local_point - local_mean, rcond=None)[0]
 
-def elevation(poses):
+def elevation(poses = poses):
     """Calculates the elevation for each pose in WGS84 coordinates if there is no elevation value.
 
     Args:
@@ -59,16 +60,16 @@ def interpolate_to_wgs84(local_point, poses):
 
 
 
-def convert_to_wgs84(tx, ty, elevation):
+def convert_to_wgs84(tx, ty, tz, poses = poses):
     """
     Converts local coordinates to WGS84 coordinates.
     """
-    local_point = np.array([tx, ty, elevation])
+    local_point = np.array([tx, ty, tz])
     wgs84_point = interpolate_to_wgs84(local_point, poses)
-    return wgs84_point[0], wgs84_point[1], wgs84_point[2]
+    return wgs84_point
     
     
-def convert_file(input = "./georeference/LIN_poses.txt", output = "./georeference/output.txt"):
+def convert_file(input = "./georeference/LIN_poses.txt", output = "./georeference/output.txt", poses = poses):
     local_points = []
     column2_values = []
     with open(input, "r", encoding="utf-8") as file:
@@ -90,9 +91,9 @@ def convert_file(input = "./georeference/LIN_poses.txt", output = "./georeferenc
     
 
 if __name__ == "__main__":
-    
-    tx, ty, elevation = 87.19216054872965, -58.229433377117175, -1.8841856889721933
-    wgs84_coords = convert_to_wgs84(tx, ty, elevation)
+        
+    tx, ty, tz = 87.19216054872965, -58.229433377117175, -1.8841856889721933
+    wgs84_coords = convert_to_wgs84(tx, ty, tz)
     print(f"WGS84 Coordinates: {wgs84_coords}")
 
-    #convert_file()
+    convert_file()
