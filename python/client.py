@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 import subprocess
 import os
 import json
+import re
 from collections import OrderedDict
 
 app = Flask(__name__)
@@ -100,18 +101,34 @@ def run_bash_command():
         
         # Let's attempt to parse the first line as JSON
         try:
-            # Assuming that the first line contains the JSON data
-            # If output_lines[1] is a valid JSON string, it can be loaded into a dictionary
-            json_data = json.loads(output_lines[1])  # Convert the JSON string to a Python dictionary
+            json_str = output_lines[1].strip()  # Assuming output_lines[1] contains the JSON string
+            print("JSON string:", json_str)  # Add debug print for the JSON string
+            
+            # Attempt to clean and parse the JSON
+            json_str = re.sub(r'\s*([-+]?\d*\.\d+|\d+)\s*', r'\1', json_str)  # Clean the numbers
+            json_data = json.loads(json_str) 
+
+            if isinstance(json_data.get('geopose', {}).get('position', {}).get('h'), str):
+                json_data['geopose']['position']['h'] = float(json_data['geopose']['position']['h'])
+            if isinstance(json_data.get('geopose', {}).get('position', {}).get('lat'), str):
+                json_data['geopose']['position']['lat'] = float(json_data['geopose']['position']['lat'])
+            if isinstance(json_data.get('geopose', {}).get('position', {}).get('lon'), str):
+                json_data['geopose']['position']['lon'] = float(json_data['geopose']['position']['lon'])
+            
+            # Convert quaternion values to float (if not already)
+            for key in ['w', 'x', 'y', 'z']:
+                if isinstance(json_data.get('geopose', {}).get('quaternion', {}).get(key), str):
+                    json_data['geopose']['quaternion'][key] = float(json_data['geopose']['quaternion'][key])
         except Exception as e:
             return jsonify({
                 'error': 'Erreur de décodage JSON',
                 'message': str(e)
             }), 500
         
+
         # Utilisation d'OrderedDict pour garantir l'ordre des clés
         ordered_data = OrderedDict([
-            ('type', json_data.get('type')),
+            ('type', json_data.get('type')),    
             ('id', json_data.get('id')),
             ('timestamp', json_data.get('timestamp')),
             ('geopose', json_data.get('geopose'))
@@ -119,7 +136,6 @@ def run_bash_command():
 
         # Renvoie le JSON avec l'ordre des clés souhaité
         return jsonify(ordered_data)
-        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

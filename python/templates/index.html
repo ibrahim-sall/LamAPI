@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<header>  
+<header>
     <h1>Lamar API</h1>
 </header>
 <div class="container">
@@ -17,7 +18,7 @@
     <img id="preview" src="" alt="Aperçu de l'image" style="max-width: 300px; display: none;">
 
     <h2>Choisir un dossier contenant les fichiers GeoPose</h2>
-    <input type="file" id="folderInput" onchange="uploadFolderPath()" webkitdirectory directory multiple >
+    <input type="file" id="folderInput" onchange="uploadFolderPath()" webkitdirectory directory multiple>
     <p id="folderPath"></p>
 
     <button onclick="runCommand()">Run Command</button>
@@ -41,19 +42,19 @@
             method: "POST",
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('image').innerText = "Image uploadée : " + data.filename;
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('image').innerText = "Image uploadée : " + data.filename;
 
-            // Affiche l'image dans la balise <img>
-            const preview = document.getElementById('preview');
-            preview.src = '/uploads/' + data.filename;
-            preview.style.display = 'block';
-        })
-        .catch(error => {
-            console.error("Erreur upload :", error);
-            document.getElementById('image').innerText = "Erreur d'upload.";
-        });
+                // Affiche l'image dans la balise <img>
+                const preview = document.getElementById('preview');
+                preview.src = '/uploads/' + data.filename;
+                preview.style.display = 'block';
+            })
+            .catch(error => {
+                console.error("Erreur upload :", error);
+                document.getElementById('image').innerText = "Erreur d'upload.";
+            });
     }
 
     function uploadFolderPath() {
@@ -74,14 +75,14 @@
             method: "POST",
             body: formData
         })
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById("folderPath").innerText = "Dossier sélectionné : " + data.folder;
-        })
-        .catch(err => {
-            console.error(err);
-            document.getElementById("folderPath").innerText = "Erreur lors de l'envoi du dossier.";
-        });
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("folderPath").innerText = "Dossier sélectionné : " + data.folder;
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById("folderPath").innerText = "Erreur lors de l'envoi du dossier.";
+            });
     }
 
     function runCommand() {
@@ -120,4 +121,5 @@
             });
     }
 </script>
+
 </html>
