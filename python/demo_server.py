@@ -59,7 +59,7 @@ def localize():
     cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
     run_docker_command(cmd)
 
-    POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_phone/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt'
+    POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_hololens/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/rig/poses.txt'
 
     if not os.path.exists(POSES_FILE):
         return make_response(jsonify({"error": "The file './poses.txt' does not exist."}), 500)
@@ -78,7 +78,6 @@ def localize():
     geoPose.quaternion.y = last_line[4]
     geoPose.quaternion.z = last_line[5]
     geoPose.quaternion.w = last_line[2]
-    print(last_line[6], last_line[7], last_line[8])
     ###Convertt to WGS84
   
     geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(float(last_line[6]), float(last_line[7]), float(last_line[8]))

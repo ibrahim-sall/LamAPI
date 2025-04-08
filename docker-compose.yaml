@@ -1,6 +1,7 @@
 # compose.yaml
 services:
   server:
+    image: lamapi-server
     build:
       context: ./python
       dockerfile: Dockerfile
@@ -13,6 +14,7 @@ services:
     volumes:
       - output_volume:/output
   client_web:
+    image: lamapi-client_web
     build:
       context: ./python
       dockerfile: Dockerfile2
