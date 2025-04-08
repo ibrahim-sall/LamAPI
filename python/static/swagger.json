@@ -1,0 +1,403 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "LamAPI",
+    "description": "API GeoPose.",
+    "version": "1.0.0"
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/geopose": {
+      "get": {
+        "summary": "Returns the status of the GeoPose service",
+        "operationId": "getStatus",
+        "tags": ["GeoPose"],
+        "responses": {
+          "200": {
+            "description": "Service is running",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "running"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Submit sensor data and get GeoPose localization",
+        "operationId": "localize",
+        "tags": ["GeoPose"],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "GeoPose request containing sensor data (camera, Bluetooth, WiFi)",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GeoPoseRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully received GeoPose response",
+            "schema": {
+              "$ref": "#/definitions/GeoPoseResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request, missing or invalid data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example" : "request has no camera readings"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "error": {
+                  "type": "string",
+                  "example": "INTERNAL SERVER ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "GeoPoseRequest": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "required" : true,
+          "type": "string",
+          "example": "geopose"
+        },
+        "id": {
+          "required" : true,
+          "type": "string",
+          "example": "93f5f2e7-9caa-4e8d-be51-5487fc62c84f"
+        },
+        "timestamp": {
+          "required" : true,
+          "type": "number",
+          "example": 1744021139326.061
+        },
+        "sensors": {
+          "required" : true,
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Sensor"
+          }
+        },
+        "sensorReadings": {
+          "type": "object",
+          "properties": {
+            "cameraReadings": {
+              "required" : true,
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/CameraReading"
+              }
+            },
+            "wifiReadings": {
+              "required" : false,
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WiFiReading"
+              }
+            },
+            "bluetoothReadings": {
+              "required" : false,
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/BluetoothReading"
+              }
+            }
+          }
+        }
+      }
+    },
+    "GeoPoseResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "example": "93f5f2e7-9caa-4e8d-be51-5487fc62c84f"
+        },
+        "timestamp": {
+          "type": "number",
+          "example": 1744021139326.061
+        },
+        "geopose": {
+          "type": "object",
+          "properties": {
+            "quaternion": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "number",
+                  "example": 0.0
+                },
+                "y": {
+                  "type": "number",
+                  "example": 0.0
+                },
+                "z": {
+                  "type": "number",
+                  "example": 0.0
+                },
+                "w": {
+                  "type": "number",
+                  "example": 1.0
+                }
+              }
+            },
+            "position": {
+              "type": "object",
+              "properties": {
+                "lat": {
+                  "type": "number",
+                  "example": 48.8584
+                },
+                "lon": {
+                  "type": "number",
+                  "example": 2.2945
+                },
+                "h": {
+                  "type": "number",
+                  "example": 10.0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Sensor": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["camera", "bluetooth", "wifi"],
+          "example": "camera"
+        },
+        "id": {
+          "type": "string",
+          "example": "ios_2022-01-12_16.32.48_000/cam_phone_14911412476"
+        },
+        "name": {
+          "type": "string",
+          "example": "phone camera for timestamp 14911412476"
+        },
+        "model": {
+          "type": "string",
+          "example": "PINHOLE"
+        },
+        "rigIdentifier": {
+          "type": "string",
+          "example": ""
+        },
+        "rigRotation": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number", "example": 0.0 },
+            "y": { "type": "number", "example": 0.0 },
+            "z": { "type": "number", "example": 0.0 },
+            "w": { "type": "number", "example": 0.0 }
+          }
+        },
+        "rigTranslation": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "number", "example": 0.0 },
+            "y": { "type": "number", "example": 0.0 },
+            "z": { "type": "number", "example": 0.0 }
+          }
+        }
+      }
+    },
+    "CameraReading": {
+      "type": "object",
+      "properties": {
+        "sensorId": {
+          "type": "string",
+          "example": "ios_2022-01-12_16.32.48_000/cam_phone_14911412476"
+        },
+        "timestamp": {
+          "type": "number",
+          "example": 14911412476
+        },
+        "privacy": {
+          "type": "object",
+          "properties": {
+            "dataRetention": { "type": "string", "example": "" },
+            "dataAcceptableUse": { "type": "string", "example": "" },
+            "dataSanitizationApplied": { "type": "string", "example": "" },
+            "dataSanitizationRequested": { "type": "string", "example": "" }
+          }
+        },
+        "sequenceNumber": {
+          "type": "number",
+          "example": 1
+        },
+        "imageFormat": {
+          "type": "string",
+          "example": "RGBA32"
+        },
+        "size": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "example": 1440
+          },
+          "example":[1440, 1920]
+        },
+        "imageBytes": {
+          "description":"base64 encoded data",
+          "type": "string",
+          "example": "aW1hZ2UgdGVzdA=="
+        },
+        "imageOrientation": {
+          "type": "object",
+          "properties": {
+            "mirrored": { "type": "boolean", "example": false },
+            "rotation": { "type": "number", "example": 0.0 }
+          }
+        },
+        "params": {
+          "type": "object",
+          "properties": {
+            "model": { "type": "string", "example": "PINHOLE" },
+            "modelParams": {
+              "type": "array",
+              "items": {
+                "type": "number",
+                "example": 1440
+              },
+              "example": [1440, 1920, 1590.657593, 1590.657593, 716.893005, 939.960144]
+            }
+          }
+        }
+      }
+    },
+    "WiFiReading": {
+      "type": "object",
+      "properties": {
+        "sensorId": {
+          "type": "string",
+          "example": "ios_2022-01-12_16.32.48_000/bt_sensor"
+        },
+        "timestamp": {
+          "type": "number",
+          "example": 14911412476
+        },
+        "privacy": {
+          "type": "object",
+          "properties": {
+            "dataRetention": { "type": "string", "example": "" },
+            "dataAcceptableUse": { "type": "string", "example": "" },
+            "dataSanitizationApplied": { "type": "string", "example": "" },
+            "dataSanitizationRequested": { "type": "string", "example": "" }
+          }
+        },
+        "BSSID": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "example": "e1:64:44:e3:e4:05"
+          }
+        },
+        "frequency": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "example": -1
+          }
+        },
+        "RSSI": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "example": -73.7160971010052
+          }
+        },
+        "SSID": {
+          "type": "string",
+          "example": ""
+        },
+        "scanTimeStart": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "example": -1
+          }
+        },
+        "scanTimeEnd": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "example": -1
+          }
+        }
+      }
+    },
+    "BluetoothReading": {
+      "type": "object",
+      "properties": {
+        "sensorId": {
+          "type": "string",
+          "example": "ios_2022-01-12_16.32.48_000/bt_sensor"
+        },
+        "timestamp": {
+          "type": "number",
+          "example": 14911412476
+        },
+        "privacy": {
+          "type": "object",
+          "properties": {
+            "dataRetention": { "type": "string", "example": "" },
+            "dataAcceptableUse": { "type": "string", "example": "" },
+            "dataSanitizationApplied": { "type": "string", "example": "" },
+            "dataSanitizationRequested": { "type": "string", "example": "" }
+          }
+        },
+        "address": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "example": "4100547d-729c-387a-e5d1-379f5c1dec9b:0:1376"
+          }
+        },
+        "RSSI": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "example": -80.16371305284352
+          }
+        },
+        "name": {
+          "type": "string",
+          "example": ""
+        }
+      }
+    }
+  }
+}
