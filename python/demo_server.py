@@ -11,9 +11,12 @@ from argparse import ArgumentParser
 import base64
 import os
 import json
+from georeference.georef import convert_to_wgs84 
+from flask_swagger_ui import get_swaggerui_blueprint
 from oscp.geoposeprotocol import *
 from demo_docker import *
-from georeference.georef import convert_to_wgs84 
+
+
 
 parser = ArgumentParser()
 parser.add_argument(
@@ -35,13 +38,32 @@ args = parser.parse_args()
 
 app = Flask(__name__)
 
+
+# Swagger UI route
+SWAGGER_URL = '/swagger'
+API_URL = '/static/swagger.json'
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={
+        'app_name': "LamAPI",
+        'additionalQueryStringParams': {
+            'config': '.',  
+            'output': 'path/volume_output'  
+        }
+    }
+)
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
+##################################################
+
 @app.route('/geopose', methods=['GET'])
 def status():
     return make_response("{\"status\": \"running\"}", 200)
 
-
 @app.route('/geopose', methods=['POST'])
 def localize():
+
     jdata = request.get_json()
     geoPoseRequest = GeoPoseRequest.fromJson(jdata)
 
@@ -50,6 +72,7 @@ def localize():
     if geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes is None:
         abort(400, description='request has no image')
     imgdata = base64.b64decode(geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes)
+
     # DEBUG
     #print("Request:")
     #print(geoPoseRequest.toJson())
