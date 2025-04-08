@@ -11,8 +11,12 @@ from argparse import ArgumentParser
 import base64
 import os
 import json
+from georeference.georef import convert_to_wgs84 
+from flask_swagger_ui import get_swaggerui_blueprint
 from oscp.geoposeprotocol import *
 from demo_docker import *
+
+
 
 parser = ArgumentParser()
 parser.add_argument(
@@ -26,21 +30,40 @@ parser.add_argument(
     '--dataset', '-dataset',
     type=str,
     required=False,
-    default='CAB',
-    help='Specify the dataset to use between {CAB, LIN, HGE}. Default is "CAB".'
+    default='LIN',
+    help='Specify the dataset to use between {CAB, LIN, HGE}. Default is "LIN".'
 )
 
 args = parser.parse_args()
 
 app = Flask(__name__)
 
+
+# Swagger UI route
+SWAGGER_URL = '/swagger'
+API_URL = '/static/swagger.json'
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={
+        'app_name': "LamAPI",
+        'additionalQueryStringParams': {
+            'config': '.',  
+            'output': 'path/volume_output'  
+        }
+    }
+)
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
+##################################################
+
 @app.route('/geopose', methods=['GET'])
 def status():
     return make_response("{\"status\": \"running\"}", 200)
 
-
 @app.route('/geopose', methods=['POST'])
 def localize():
+
     jdata = request.get_json()
     geoPoseRequest = GeoPoseRequest.fromJson(jdata)
 
@@ -49,20 +72,21 @@ def localize():
     if geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes is None:
         abort(400, description='request has no image')
     imgdata = base64.b64decode(geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes)
+
     # DEBUG
     #print("Request:")
     #print(geoPoseRequest.toJson())
     #print()
 
+    write_data(imgdata, geoPoseRequest)
+    cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
+    run_docker_command(cmd)
 
-    # TODO:
-    # ...
-    # here comes the call to VPS implementation
-    # ...
-    # right now we just fill in the example values provided in the config file
-    if not os.path.exists('./data/poses.txt'):
+    POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_hololens/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/rig/poses.txt'
+
+    if not os.path.exists(POSES_FILE):
         return make_response(jsonify({"error": "The file './poses.txt' does not exist."}), 500)
-    with open('./data/poses.txt', "r") as f:
+    with open(POSES_FILE, "r") as f:
         f.seek(0, 2)
         while f.tell() > 0:
             f.seek(f.tell() - 2, 0)
@@ -77,9 +101,9 @@ def localize():
     geoPose.quaternion.y = last_line[4]
     geoPose.quaternion.z = last_line[5]
     geoPose.quaternion.w = last_line[2]
-    geoPose.position.lat = last_line[6] # ATTENTION: c'est Tx de LAMAR pas lat
-    geoPose.position.lon = last_line[7] # ATTENTION: c'est Ty de LAMAR pas lon
-    geoPose.position.h = last_line[8] # ATTENTION: c'est Tz de LAMAR pas h
+    ###Convertt to WGS84
+  
+    geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(float(last_line[6]), float(last_line[7]), float(last_line[8]))
 
     geoPoseResponse = GeoPoseResponse(id = geoPoseRequest.id, timestamp = geoPoseRequest.timestamp)
     geoPoseResponse.geopose = geoPose
@@ -90,9 +114,6 @@ def localize():
     #print()
 
     try:
-        write_data(imgdata, geoPoseRequest)
-        cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
-        run_docker_command(cmd)
         response = make_response(geoPoseResponse.toJson(), 200)
     except Exception as e:
         print(f"Error writing data: {e}")

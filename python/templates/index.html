@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 
 <head>
     <meta charset="UTF-8">
@@ -8,23 +8,32 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
-<header>
-    <h1>Lamar API</h1>
-</header>
-<div class="container">
-    <h2>Choisir l'image à GeoPoser</h2>
-    <input type="file" id="imageInput" accept="image/*" onchange="uploadImage()">
-    <p id="image"></p>
-    <img id="preview" src="" alt="Aperçu de l'image" style="max-width: 300px; display: none;">
+<body>
+    <header>
+        <h1>Lamar API</h1>
+    </header>
+    <main class="container">
+        <section class="form-section">
+            <h2>1. Sélectionner une image à GeoPoser</h2>
+            <label for="imageInput" class="custom-label">Importer une image</label>
+            <input type="file" id="imageInput" accept="image/*" onchange="uploadImage()">
+            <p id="image"></p>
+            <img id="preview" src="" alt="Aperçu de l'image" class="preview-img">
+        </section>
 
-    <h2>Choisir un dossier contenant les fichiers GeoPose</h2>
-    <input type="file" id="folderInput" onchange="uploadFolderPath()" webkitdirectory directory multiple>
-    <p id="folderPath"></p>
+        <section class="form-section">
+            <h2>2. Sélectionner un dossier GeoPose</h2>
+            <label for="folderInput" class="custom-label">Importer un dossier</label>
+            <input type="file" id="folderInput" onchange="uploadFolderPath()" webkitdirectory directory multiple>
+            <p id="folderPath"></p>
+        </section>
 
-    <button onclick="runCommand()">Run Command</button>
-    <div id="status" class="status"></div>
-    <div id="output" class="output"></div>
-</div>
+        <button onclick="runCommand()">Lancer le traitement</button>
+
+        <div id="status" class="status"></div>
+        <div id="output" class="output"></div>
+    </main>
+</body>
 <script>
     function uploadImage() {
         const fileInput = document.getElementById('imageInput');
