@@ -4,7 +4,6 @@ import subprocess
 import os
 import json
 import re
-from collections import OrderedDict
 
 app = Flask(__name__)
 
@@ -96,15 +95,11 @@ def run_bash_command():
                 'returncode': result.returncode
             }), 500
 
-        # Split the output by lines
         output_lines = result.stdout.splitlines()
         
-        # Let's attempt to parse the first line as JSON
         try:
-            json_str = output_lines[1].strip()  # Assuming output_lines[1] contains the JSON string
-            print("JSON string:", json_str)  # Add debug print for the JSON string
+            json_str = output_lines[1].strip()
             
-            # Attempt to clean and parse the JSON
             json_str = re.sub(r'\s*([-+]?\d*\.\d+|\d+)\s*', r'\1', json_str)  # Clean the numbers
             json_data = json.loads(json_str) 
 
@@ -115,7 +110,6 @@ def run_bash_command():
             if isinstance(json_data.get('geopose', {}).get('position', {}).get('lon'), str):
                 json_data['geopose']['position']['lon'] = float(json_data['geopose']['position']['lon'])
             
-            # Convert quaternion values to float (if not already)
             for key in ['w', 'x', 'y', 'z']:
                 if isinstance(json_data.get('geopose', {}).get('quaternion', {}).get(key), str):
                     json_data['geopose']['quaternion'][key] = float(json_data['geopose']['quaternion'][key])
@@ -125,11 +119,8 @@ def run_bash_command():
                 'message': str(e)
             }), 500
         
-
-        # Utilisation d'OrderedDict pour garantir l'ordre des clés
         ordered_data = {'type':json_data.get('type'),'id':json_data.get('id'),'timestamp':json_data.get('timestamp'),'geopose':json_data.get('geopose')}
 
-        # Renvoie le JSON avec l'ordre des clés souhaité
         return ordered_data
     except Exception as e:
         return jsonify({'error': str(e)}), 500
