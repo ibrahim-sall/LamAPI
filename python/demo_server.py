@@ -8,20 +8,17 @@
 
 from flask import Flask, request, jsonify, make_response, abort
 from argparse import ArgumentParser
-from flask_swagger import swagger
 import base64
 import os
 import json
-from oscp.geoposeprotocol import *
+from georeference.georef import convert_to_wgs84 
 from flask_swagger_ui import get_swaggerui_blueprint
+from oscp.geoposeprotocol import *
+from demo_docker import *
+
+
 
 parser = ArgumentParser()
-parser.add_argument(
-    '--config', '-config',
-    type=str,
-    required = True,
-    default = None
-)
 parser.add_argument(
     '--output_path', '-output_path',
     type=str,
@@ -33,18 +30,11 @@ parser.add_argument(
     '--dataset', '-dataset',
     type=str,
     required=False,
-    default='CAB',
-    help='Specify the dataset to use between {CAB, LIN, HGE}. Default is "CAB".'
+    default='LIN',
+    help='Specify the dataset to use between {CAB, LIN, HGE}. Default is "LIN".'
 )
 
 args = parser.parse_args()
-
-with open(args.config, 'r') as f:
-    config = json.load(f)
-    f.close()
-print("Server config:")
-print(config)
-
 
 app = Flask(__name__)
 
@@ -88,20 +78,33 @@ def localize():
     #print(geoPoseRequest.toJson())
     #print()
 
+    write_data(imgdata, geoPoseRequest)
+    cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
+    run_docker_command(cmd)
 
-    # TODO:
-    # ...
-    # here comes the call to VPS implementation
-    # ...
-    # right now we just fill in the example values provided in the config file
+    POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_phone/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt'
+
+    if not os.path.exists(POSES_FILE):
+        return make_response(jsonify({"error": "The file './poses.txt' does not exist."}), 500)
+    with open(POSES_FILE, "r") as f:
+        f.seek(0, 2)
+        while f.tell() > 0:
+            f.seek(f.tell() - 2, 0)
+            char = f.read(1)
+            if char == '\n':
+                break
+        last_line = f.readline().strip().split(',')
+
+
     geoPose = GeoPose()
-    geoPose.quaternion.x = config["geopose"]["quaternion"]["x"]
-    geoPose.quaternion.y = config["geopose"]["quaternion"]["y"]
-    geoPose.quaternion.z = config["geopose"]["quaternion"]["z"]
-    geoPose.quaternion.w = config["geopose"]["quaternion"]["w"]
-    geoPose.position.lat = config["geopose"]["position"]["lat"]
-    geoPose.position.lon = config["geopose"]["position"]["lon"]
-    geoPose.position.h = config["geopose"]["position"]["h"]
+    geoPose.quaternion.x = last_line[3]
+    geoPose.quaternion.y = last_line[4]
+    geoPose.quaternion.z = last_line[5]
+    geoPose.quaternion.w = last_line[2]
+    print(last_line[6], last_line[7], last_line[8])
+    ###Convertt to WGS84
+  
+    geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(float(last_line[6]), float(last_line[7]), float(last_line[8]))
 
     geoPoseResponse = GeoPoseResponse(id = geoPoseRequest.id, timestamp = geoPoseRequest.timestamp)
     geoPoseResponse.geopose = geoPose
@@ -112,7 +115,6 @@ def localize():
     #print()
 
     try:
-        write_data(imgdata, geoPoseRequest)
         response = make_response(geoPoseResponse.toJson(), 200)
     except Exception as e:
         print(f"Error writing data: {e}")
@@ -162,6 +164,13 @@ def write_data(imgdata, geo_pose_request):
                     reading.BSSID, reading.frequency, reading.RSSI, reading.scanTimeStart, reading.scanTimeEnd
                 )
             ]
+        },
+        "cameraReadings": {
+            "filename": "images.txt",
+            "header": "# timestamp, sensor_id, image_path\n",
+            "line_format": lambda reading: [
+                f"{reading.timestamp}, {reading.sensorId}, {output_dir}/{reading.timestamp}.png\n"
+            ]
         }
     }
 
@@ -184,5 +193,6 @@ def write_data(imgdata, geo_pose_request):
             else:
                 print(f"Aucune donnée trouvée pour {attribute}, fichier ignoré.")
 
+            
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=True)
