@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lamar API</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
     <header>
         <h1>Lamar API</h1>
@@ -18,6 +20,7 @@
             <p id="image"></p>
             <img id="preview" src="" alt="Aperçu de l'image" class="preview-img">
         </section>
+
 
         <section class="form-section">
             <h2>2. Sélectionner un dossier GeoPose</h2>
@@ -49,19 +52,19 @@
             method: "POST",
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('image').innerText = "Image uploadée : " + data.filename;
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('image').innerText = "Image uploadée : " + data.filename;
 
-            // Affiche l'image dans la balise <img>
-            const preview = document.getElementById('preview');
-            preview.src = '/uploads/' + data.filename;
-            preview.style.display = 'block';
-        })
-        .catch(error => {
-            console.error("Erreur upload :", error);
-            document.getElementById('image').innerText = "Erreur d'upload.";
-        });
+                // Affiche l'image dans la balise <img>
+                const preview = document.getElementById('preview');
+                preview.src = '/uploads/' + data.filename;
+                preview.style.display = 'block';
+            })
+            .catch(error => {
+                console.error("Erreur upload :", error);
+                document.getElementById('image').innerText = "Erreur d'upload.";
+            });
     }
 
     function uploadFolderPath() {
@@ -82,14 +85,14 @@
             method: "POST",
             body: formData
         })
-        .then(res => res.json())
-        .then(data => {
-            document.getElementById("folderPath").innerText = "Dossier sélectionné : " + data.folder;
-        })
-        .catch(err => {
-            console.error(err);
-            document.getElementById("folderPath").innerText = "Erreur lors de l'envoi du dossier.";
-        });
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById("folderPath").innerText = "Dossier sélectionné : " + data.folder;
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById("folderPath").innerText = "Erreur lors de l'envoi du dossier.";
+            });
     }
 
     function runCommand() {
@@ -115,12 +118,21 @@
             .then(data => {
                 const outputDiv = document.getElementById('output');
 
+                const orderedData = {
+                    "type": data.type,
+                    "id": data.id,
+                    "timestamp": data.timestamp,
+                    "geopose": data.geopose
+                };
+
+                const formattedData = JSON.stringify(orderedData, null, 4);
+
                 if (data.output) {
                     outputDiv.innerHTML = `<pre>${data.output}</pre>`;
                 } else if (data.error) {
                     outputDiv.innerHTML = `<pre>${data.error}</pre>`;
                 } else {
-                    outputDiv.innerHTML = `<pre>${JSON.stringify(data, null, 4)}</pre>`;
+                    outputDiv.innerHTML = `<pre>${formattedData}</pre>`;
                 }
             })
             .catch(error => {
@@ -128,4 +140,5 @@
             });
     }
 </script>
+
 </html>

@@ -232,7 +232,7 @@ try:
     # print()
 
     response = requests.post(args.url, headers=headers, data=body)
-    print(f'Status: {response.status_code}')
+    # print(f'Status: {response.status_code}')
     jdata = response.json()
     geoPoseResponse = GeoPoseResponse.fromJson(jdata)
 

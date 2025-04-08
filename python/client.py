@@ -2,6 +2,8 @@ from flask import Flask, jsonify, render_template, request, send_from_directory
 from werkzeug.utils import secure_filename
 import subprocess
 import os
+import json
+import re
 
 app = Flask(__name__)
 
@@ -66,11 +68,6 @@ def set_folder():
 @app.route('/run-bash', methods=['GET'])
 def run_bash_command():
     try:
-        # cur_dir = os.getcwd()
-        # bash_script_path = os.path.join(cur_dir, 'run-oscp-gpp-client.sh')
-        # result = subprocess.run([bash_script_path], capture_output=True, text=True)
-        # return jsonify({'output': result.stdout.strip()})
-
         imagestxt_path = os.path.join(selected_folder, 'images.txt')
         sensors_path = os.path.join(selected_folder, 'sensors.txt')
         bt_path = os.path.join(selected_folder, 'bt.txt')
@@ -90,7 +87,7 @@ def run_bash_command():
         ]
 
         result = subprocess.run(command, capture_output=True, text=True)
-
+        print(result)
         if result.returncode != 0:
             return jsonify({
                 'error': 'La commande a échoué',
@@ -98,12 +95,36 @@ def run_bash_command():
                 'returncode': result.returncode
             }), 500
 
-        return jsonify({
-            'stdout': result.stdout.strip(),
-        })
-    
+        output_lines = result.stdout.splitlines()
+        
+        try:
+            json_str = output_lines[1].strip()
+            
+            json_str = re.sub(r'\s*([-+]?\d*\.\d+|\d+)\s*', r'\1', json_str)  # Clean the numbers
+            json_data = json.loads(json_str) 
+
+            if isinstance(json_data.get('geopose', {}).get('position', {}).get('h'), str):
+                json_data['geopose']['position']['h'] = float(json_data['geopose']['position']['h'])
+            if isinstance(json_data.get('geopose', {}).get('position', {}).get('lat'), str):
+                json_data['geopose']['position']['lat'] = float(json_data['geopose']['position']['lat'])
+            if isinstance(json_data.get('geopose', {}).get('position', {}).get('lon'), str):
+                json_data['geopose']['position']['lon'] = float(json_data['geopose']['position']['lon'])
+            
+            for key in ['w', 'x', 'y', 'z']:
+                if isinstance(json_data.get('geopose', {}).get('quaternion', {}).get(key), str):
+                    json_data['geopose']['quaternion'][key] = float(json_data['geopose']['quaternion'][key])
+        except Exception as e:
+            return jsonify({
+                'error': 'Erreur de décodage JSON',
+                'message': str(e)
+            }), 500
+        
+        ordered_data = {'type':json_data.get('type'),'id':json_data.get('id'),'timestamp':json_data.get('timestamp'),'geopose':json_data.get('geopose')}
+
+        return ordered_data
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=8080, host='0.0.0.0')
