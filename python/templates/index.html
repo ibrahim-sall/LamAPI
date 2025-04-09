@@ -6,11 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lamar API</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 </head>
 
 <body>
     <header>
-        <h1>Lamar API</h1>
+        <div class="header-content">
+            <img src="{{ url_for('static', filename='lama.png') }}" alt="Logo Lamar API" class="logo">
+            <h1>Lamar API</h1>
+        </div>
     </header>
     <main class="container">
         <section class="form-section">
@@ -33,6 +38,9 @@
 
         <div id="status" class="status"></div>
         <div id="output" class="output"></div>
+
+        <div id="map" class="map-container"></div>
+        <div id="streetview-link" class="streetview-link-container"></div>
     </main>
 </body>
 <script>
@@ -95,6 +103,8 @@
             });
     }
 
+    let leafletMap = null;
+
     function runCommand() {
         fetch('/run-bash')
             .then(response => {
@@ -133,6 +143,50 @@
                     outputDiv.innerHTML = `<pre>${data.error}</pre>`;
                 } else {
                     outputDiv.innerHTML = `<pre>${formattedData}</pre>`;
+                }
+
+                // Affichage de la carte si data.geopose est présent
+                if (data.geopose && data.geopose.position) {
+                    const lat = data.geopose.position.lat;
+                    const lon = data.geopose.position.lon;
+
+                    if (lat && lon) {
+                        const mapContainer = document.getElementById('map');
+                        mapContainer.style.display = 'block';
+
+                        // Si une carte existe déjà, on la détruit proprement
+                        if (leafletMap !== null) {
+                            leafletMap.remove(); // ← supprime complètement la carte existante
+                            leafletMap = null;
+                        }
+
+                        // Nouvelle carte
+                        leafletMap = L.map('map').setView([lat, lon], 15);
+
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; OpenStreetMap contributors'
+                        }).addTo(leafletMap);
+
+                        L.marker([lat, lon]).addTo(leafletMap)
+                            .bindPopup('Position GeoPose')
+                            .openPopup();
+
+                            const linkDiv = document.getElementById("streetview-link");
+
+                        // Reset
+                        linkDiv.innerHTML = "";
+
+                        // Ajout du bouton StreetView
+                        const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lon}`;
+
+                        const linkBtn = document.createElement("a");
+                        linkBtn.href = streetViewUrl;
+                        linkBtn.target = "_blank";
+                        linkBtn.rel = "noopener noreferrer";
+                        linkBtn.innerText = "Voir dans Street View";
+
+                        linkDiv.appendChild(linkBtn);
+                    }
                 }
             })
             .catch(error => {
