@@ -147,8 +147,8 @@
 
                 // Affichage de la carte si data.geopose est présent
                 if (data.geopose && data.geopose.position) {
-                    const lat = data.geopose.position.lat || data.geopose.position.latitude;
-                    const lon = data.geopose.position.lon || data.geopose.position.longitude;
+                    const lat = data.geopose.position.lat;
+                    const lon = data.geopose.position.lon;
 
                     if (lat && lon) {
                         const mapContainer = document.getElementById('map');
