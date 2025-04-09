@@ -1,5 +1,5 @@
 import numpy as np
-from .z_interpolation import get_elevation
+from z_interpolation import get_elevation
 
 """Here we defined our reference points in local and WGS84 coordinates 
 It comes from images that we placed on street view"""
@@ -18,22 +18,6 @@ poses = [
     }
 ]
 
-
-def get_weights(local_point, poses = poses):
-    """Calculates the weights for each pose based on the local coordinates and WGS84 correspondance.
-
-    Args:
-        poses (dic): Grounding thruth points for dataset
-        
-    Returns:
-        list: Weights for each pose.
-    """
-    poses = elevation()
-    local_coords = np.array([pose["local"] for pose in poses])
-    local_mean = local_coords.mean(axis=0)
-
-    return np.linalg.lstsq(local_coords - local_mean, local_point - local_mean, rcond=None)[0]
-
 def elevation(poses = poses):
     """Calculates the elevation for each pose in WGS84 coordinates if there is no elevation value.
 
@@ -49,33 +33,49 @@ def elevation(poses = poses):
             pose["wgs84"][2] = get_elevation("/mnt/lamas/data/MNT/2683_1247.las",y, x)
     return poses
 
-def interpolate_to_wgs84(local_point, poses):
-    """
-    Interpolates a local reference point to WGS84 coordinates using the three points in poses.
-    
+
+def solve_system(poses):
+    """Estime les matrices de rotation (R) et de translation (T) pour le système X2 = R * X1 + T.
+
     Args:
-        local_point (list): Local coordinates to be converted.
+        poses (list): Liste de dictionnaires contenant les points locaux ("local") et globaux ("wgs84").
 
     Returns:
-        list: WGS84 coordinates.
+        tuple: Matrice de rotation R (3x3) et vecteur de translation T (3x1).
     """
-    wgs84_coords = np.array([pose["wgs84"] for pose in poses])
-    wgs84_mean = wgs84_coords.mean(axis=0)
-    weights = get_weights(local_point, poses)
+    poses = elevation()
+    X1 = np.array([pose["local"] for pose in poses]).T 
+    X2 = np.array([pose["wgs84"] for pose in poses]).T 
+
+    T = np.mean(X2 - X1, axis=0)
     
-    interpolated_wgs84 = wgs84_mean + np.dot(weights, wgs84_coords - wgs84_mean)
+    n = len(X1)
+    
+    X1 = X1 - np.mean(X1, axis=0)
+    X2 = X2 - np.mean(X2, axis=0)
 
-    return interpolated_wgs84
+    C = np.dot(X1.T, X2) / n
+    
+    U, _, Vt = np.linalg.svd(C)
+    R = np.dot(Vt.T, U.T)
+
+    
+    return R, T
 
 
 
-def convert_to_wgs84(tx, ty, tz, poses = poses):
+
+def convert_to_wgs84(local_point, poses = poses):
     """
     Converts local coordinates to WGS84 coordinates.
     """
-    local_point = np.array([tx, ty, tz])
-    wgs84_point = interpolate_to_wgs84(local_point, poses)
-    return wgs84_point
+    R, T = solve_system(poses)
+    
+    
+    wgs84_coords = R @ local_point + T + local_point
+
+    return wgs84_coords
+
     
     
 def convert_file(input = "LIN_poses.txt", output = "output.txt", poses = poses):
@@ -100,7 +100,7 @@ def convert_file(input = "LIN_poses.txt", output = "output.txt", poses = poses):
         file.write("# Interpolated WGS84 points with column2\n")
         file.write("# Format: column2, latitude, longitude, elevation\n")
         for local_point, column2 in zip(local_points, column2_values):
-            wgs84_point = interpolate_to_wgs84(local_point, poses)
+            wgs84_point =convert_to_wgs84(local_point, poses)
             file.write(f"{column2}, {wgs84_point[0]}, {wgs84_point[1]}, {wgs84_point[2]}\n")
 
     print(f"Converted points with column2 have been saved to {output}")
@@ -109,7 +109,8 @@ def convert_file(input = "LIN_poses.txt", output = "output.txt", poses = poses):
 if __name__ == "__main__":
         
     tx, ty, tz = 87.19216054872965, -58.229433377117175, -1.8841856889721933
-    wgs84_coords = convert_to_wgs84(tx, ty, tz)
+    local_point = np.array([tx, ty, tz])
+    wgs84_coords = convert_to_wgs84(local_point)
     print(f"WGS84 Coordinates: {wgs84_coords}")
 
-    convert_file()
+    #convert_file()
