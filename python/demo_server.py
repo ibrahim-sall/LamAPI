@@ -78,8 +78,8 @@ def localize():
     #print(geoPoseRequest.toJson())
     #print()
 
-    write_data(imgdata, geoPoseRequest)
-    cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
+    key_directory = write_data(imgdata, geoPoseRequest)
+    cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset, query_id=key_directory)
     run_docker_command(cmd)
 
     POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_hololens/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/rig/poses.txt'
@@ -191,6 +191,13 @@ def write_data(imgdata, geo_pose_request):
                     raise
             else:
                 print(f"Aucune donnée trouvée pour {attribute}, fichier ignoré.")
+
+    #Création fichier queries
+    query_path = f"{output_dir}/queries.txt"
+    with open(query_path, "wb") as query_file:
+        query_file.write(f"{geo_pose_request.timestamp}, {geo_pose_request.timestamp}\n") #timestamp, nom-image (similaire pour l'instant)
+
+    return output_dir
 
             
 if __name__ == '__main__':
