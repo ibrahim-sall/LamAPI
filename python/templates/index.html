@@ -37,6 +37,7 @@
         <div id="output" class="output"></div>
 
         <div id="map" class="map-container"></div>
+        <div id="streetview-link" class="streetview-link-container"></div>
     </main>
 </body>
 <script>
@@ -166,6 +167,22 @@
                         L.marker([lat, lon]).addTo(leafletMap)
                             .bindPopup('Position GeoPose')
                             .openPopup();
+
+                            const linkDiv = document.getElementById("streetview-link");
+
+                        // Reset
+                        linkDiv.innerHTML = "";
+
+                        // Ajout du bouton StreetView
+                        const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lon}`;
+
+                        const linkBtn = document.createElement("a");
+                        linkBtn.href = streetViewUrl;
+                        linkBtn.target = "_blank";
+                        linkBtn.rel = "noopener noreferrer";
+                        linkBtn.innerText = "Voir dans Street View";
+
+                        linkDiv.appendChild(linkBtn);
                     }
                 }
             })
