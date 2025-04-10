@@ -195,9 +195,47 @@ def write_data(imgdata, geo_pose_request):
     #Création fichier queries
     query_path = f"{output_dir}/queries.txt"
     with open(query_path, "wb") as query_file:
-        query_file.write(f"{geo_pose_request.timestamp}, {geo_pose_request.timestamp}\n") #timestamp, nom-image (similaire pour l'instant)
+        if hasattr(geo_pose_request.sensorReadings, "cameraReadings") and geo_pose_request.sensorReadings.cameraReadings:
+            query_file.write(f"{geo_pose_request.sensorReadings.cameraReadings[0].timestamp}, {geo_pose_request.sensorReadings.cameraReadings[0].sensorId}\n")
 
-    return output_dir
+    #Création fichier sensors
+    query_path = f"{output_dir}/sensors.txt"
+    with open(query_path, 'w') as sensor_file:
+        sensor_file.write("# sensor_id, name, sensor_type, [sensor_params]+\n")
+
+        if hasattr(geo_pose_request.sensorReadings, "cameraReadings") and geo_pose_request.sensorReadings.cameraReadings:
+            cam = geo_pose_request.sensorReadings.cameraReadings[0]
+
+            if hasattr(cam, "params") and hasattr(cam, "modelParams"):
+                sensor_id = cam.sensorId
+                name = f"phone camera for timestamp {cam.timestamp}"
+                sensor_type = "camera"
+                model = cam.params.model if hasattr(cam.params, "model") else ""
+                width, height = cam.size if cam.size else (0, 0)
+                params = cam.params.modelParams
+
+                param_str = ', '.join(str(p) for p in params)
+                cam_line = f"{sensor_id}, {name}, {sensor_type}, {model}, {width}, {height}"
+                if param_str:
+                    cam_line += f", {param_str}"
+                cam_line += "\n"
+
+                sensor_file.write(cam_line)
+            else :
+                sensor_id = cam.sensorId
+                name = f"phone camera for timestamp {cam.timestamp}"
+                sensor_type = "camera"
+
+                cam_line = f"{sensor_id}, {name}, {sensor_type}"
+                sensor_file.write(cam_line)
+
+        if hasattr(geo_pose_request, "sensors"):
+            for sensor in geo_pose_request.sensors:
+                if hasattr(sensor, "type") and sensor.type == SensorType.BLUETOOTH:
+                    bt_line = f"{sensor.id}, Apple bluetooth sensor, bluetooth"
+                    sensor_file.write(bt_line)
+
+        return output_dir
 
             
 if __name__ == '__main__':
