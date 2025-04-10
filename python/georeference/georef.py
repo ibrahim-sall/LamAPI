@@ -53,6 +53,7 @@ def solve_system(poses):
     
     X1 = X1 - np.mean(X1, axis=0)
     X2 = X2 - np.mean(X2, axis=0)
+    
 
     C = np.dot(X1.T, X2) / n
     
@@ -104,13 +105,69 @@ def convert_file(input = "LIN_poses.txt", output = "output.txt", poses = poses):
             file.write(f"{column2}, {wgs84_point[0]}, {wgs84_point[1]}, {wgs84_point[2]}\n")
 
     print(f"Converted points with column2 have been saved to {output}")
-    
+
+def ComputeOrthoBase(P1,P2,P3): 
+  
+  vec12 = P2 - P1
+  vec12 /= np.linalg.norm(vec12)
+  vec13 = P3 - P1
+  vec13 /= np.linalg.norm(vec13) 
+
+  Ri = 0.5*(vec12 - vec13)
+  Rj = 0.5*(vec12 + vec13)
+  Rk = np.cross(Ri,Rj)
+
+
+  return np.array([Ri,Rj,Rk]).transpose()
 
 if __name__ == "__main__":
+    
+    P1_local = np.array(poses[0]["local"])
+    P2_local = np.array(poses[1]["local"])
+    P3_local = np.array(poses[2]["local"])
+
+    P1_global = np.array(poses[0]["wgs84"])
+    P2_global = np.array(poses[1]["wgs84"])
+    P3_global = np.array(poses[2]["wgs84"])
+
+    local_base = ComputeOrthoBase(P1_local, P2_local, P3_local)
+    global_base = ComputeOrthoBase(P1_global, P2_global, P3_global)
+    
+    M = global_base @ np.linalg.inv(local_base)
+    
+    PtsRelative = np.array([P1_local, P2_local, P3_local])
+    PtsAbsolute = np.array([P1_global, P2_global, P3_global])
+    
+
+    dist12r = np.linalg.norm(PtsRelative[1, :] - PtsRelative[0, :])
+    dist12a = np.linalg.norm(PtsAbsolute[1, :] - PtsAbsolute[0, :])
+    dist13r = np.linalg.norm(PtsRelative[2, :] - PtsRelative[0, :])
+    dist13a = np.linalg.norm(PtsAbsolute[2, :] - PtsAbsolute[0, :])
+
+    scale1 = dist12a / dist12r
+    scale2 = dist13a / dist13r
+    scale = 0.5 * (scale1 + scale2)
+    print(scale1, scale2, scale)
+    
+    centrL = np.array([0,0,0],dtype=float)
+    centrG = np.array([0,0,0],dtype=float)
+    for i in range(3):
+        centrL[0] += PtsRelative[i,0]
+        centrL[1] += PtsRelative[i,1]
+        centrL[2] += PtsRelative[i,2]
+        centrG[0] += PtsAbsolute[i,0]
+        centrG[1] += PtsAbsolute[i,1]
+        centrG[2] += PtsAbsolute[i,2]
+
+    centrL /= 3
+    centrG /= 3
+
+    tr = centrG - scale * M @ centrL
         
     tx, ty, tz = 87.19216054872965, -58.229433377117175, -1.8841856889721933
     local_point = np.array([tx, ty, tz])
-    wgs84_coords = convert_to_wgs84(local_point)
-    print(f"WGS84 Coordinates: {wgs84_coords}")
+    
+    wgs84_point = tr + scale * M @ local_point
+    print(wgs84_point)
 
     #convert_file()
