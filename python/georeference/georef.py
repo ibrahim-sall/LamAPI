@@ -59,10 +59,10 @@ def rotation(PtsRelative, PtsAbsolute):
     """Compute rotation matrix between two coordinates systems using two Orthonormal bases.
 
     Args:
-        PtsRelative (_type_): _description_
-        PtsAbsolute (_type_): _description_
+        PtsRelative (np.ndarray): Array of relative points.
+        PtsAbsolute (np.ndarray): Array of absolute points.
     Returns:
-        _type_: _description_
+        Array(3x3): Rotation matrix.
     """
     
     local_base = computeOrthoBase(PtsRelative[0, :], PtsRelative[1, :], PtsRelative[2, :])
@@ -71,7 +71,14 @@ def rotation(PtsRelative, PtsAbsolute):
     return global_base @ np.linalg.inv(local_base)
 
 def scale_factor(PtsRelative, PtsAbsolute):
-    """_summary_
+    """
+    Computes the scale factor between two coordinate systems using the distances between points.
+    Args:
+        PtsRelative (np.ndarray): Array of relative points.
+        PtsAbsolute (np.ndarray): Array of absolute points.
+    Returns:
+        float: Scale factor.
+        
     """
     
 
@@ -84,30 +91,12 @@ def scale_factor(PtsRelative, PtsAbsolute):
 
     return 0.5 * (scale1 + scale2)
 
-def center(PtsRelative, PtsAbsolute):
-    """_summary_
-    """
-    
-    centrL = np.array([0,0,0],dtype=float)
-    centrG = np.array([0,0,0],dtype=float)
-    for i in range(3):
-        centrL[0] += PtsRelative[i,0]
-        centrL[1] += PtsRelative[i,1]
-        centrL[2] += PtsRelative[i,2]
-        centrG[0] += PtsAbsolute[i,0]
-        centrG[1] += PtsAbsolute[i,1]
-        centrG[2] += PtsAbsolute[i,2]
-
-    centrL /= 3
-    centrG /= 3
-    
-    return centrL, centrG
 
 def solve_system(poses):
-    """Estime les matrices de rotation (M) et de translation (T) pour le système X2 = M * X1 + T + (1+scale)X1.
+    """Estimates the rotation (M) and translation (T) matrices for the system X2 = M * X1 + T + (1+scale)X1.
 
     Args:
-        poses (list): Liste de dictionnaires contenant les points locaux ("local") et globaux ("wgs84").
+        poses (list): List of dictionaries containing local ("local") and global ("wgs84") points.
 
     """
     PtsRelative = np.array([poses[i]["local"] for i in range(3)])
@@ -115,7 +104,8 @@ def solve_system(poses):
     
     M = rotation(PtsRelative, PtsAbsolute)
     scale = scale_factor(PtsRelative, PtsAbsolute)
-    centrL, centrG = center(PtsRelative, PtsAbsolute)
+    centrL, centrG = PtsRelative.mean(axis=0), PtsAbsolute.mean(axis=0)
+    
     
     tr = centrG - scale * M @ centrL
     
@@ -174,12 +164,10 @@ def convert_file(input = "LIN_poses.txt", output = "output.txt", poses = poses):
 
 if __name__ == "__main__":
     
-
-    
     tx, ty, tz = 87.19216054872965, -58.229433377117175, -1.8841856889721933
     local_point = np.array([tx, ty, tz])
     
-   
+    print("Local point:", local_point) 
     print( convert_to_wgs84(local_point))
 
-    convert_file()
+    #convert_file()
