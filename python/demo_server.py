@@ -82,11 +82,10 @@ def localize():
     cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset, query_id=key_directory)
     run_docker_command(cmd)
 
-    POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_phone/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/rig/poses.txt'
-
-    if not os.path.exists('./data/poses.txt'):
+    POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_phone/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt'
+    if not os.path.exists(POSES_FILE):
         return make_response(jsonify({"error": "The file './poses.txt' does not exist."}), 500)
-    with open('./data/poses.txt', "r") as f:
+    with open(POSES_FILE, "r") as f:
         f.seek(0, 2)
         while f.tell() > 0:
             f.seek(f.tell() - 2, 0)
@@ -94,8 +93,6 @@ def localize():
             if char == '\n':
                 break
         last_line = f.readline().strip().split(',')
-
-    # subprocess.run(f"rm -rf volume_output/*", shell=True)
 
     geoPose = GeoPose()
     geoPose.quaternion.x = last_line[3]
@@ -134,7 +131,7 @@ def write_data(imgdata, geo_pose_request):
 
     try:
         # output_dir = f"{args.output_path}/{geo_pose_request.timestamp}"
-        output_dir = f"{args.output_path}/query_phone"
+        output_dir = f"{args.output_path}/{args.dataset}/query_phone"
         proc_dir = f"{output_dir}/proc"
         raw_dir = f"{output_dir}/raw_data/{justId}/images"
         os.makedirs(output_dir, exist_ok=True)

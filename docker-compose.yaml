@@ -13,6 +13,7 @@ services:
       - reseau
     volumes:
       - output_volume:/output
+      - /mnt/lamas:/mnt/lamas
   client_web:
     image: lamapi-client_web
     build:
