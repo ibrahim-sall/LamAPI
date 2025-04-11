@@ -39,123 +39,121 @@ args = parser.parse_args()
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-selected_folder = os.getcwd()
-image_path = os.path.join(selected_folder, '/data/lamar/ios_2022-01-12_16.32.48_000_14911412476/14911412476.jpg')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route('/')
 def home():
     return render_template('index.html')
+##############################################
+@app.route('/process', methods=['POST'])
+def process():
+    if 'image' not in request.files or 'files' not in request.files:
+        return jsonify({'error': 'Image ou fichiers du dossier manquants'}), 400
 
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename)
+    image_file = request.files['image']
+    folder_files = request.files.getlist('files')
 
-@app.route('/upload-image', methods=['POST'])
-def upload_image():
-    global image_path
-    if 'image' not in request.files:
-        return jsonify({'error': 'Aucun fichier fourni'}), 400
+    try:
+        image_path = save_uploaded_image(image_file)
+        selected_folder = save_uploaded_folder(folder_files)
+        output = run_geopose_processing(image_path, selected_folder)
+        return jsonify(output)
 
-    file = request.files['image']
+    except ValueError as ve:
+        return jsonify({'error': str(ve)}), 400
+    except RuntimeError as re:
+        return jsonify({'error': str(re)}), 500
+    except Exception as e:
+        return jsonify({'error': 'Erreur inattendue', 'message': str(e)}), 500
+
+##############################################
+
+    
+def save_uploaded_image(file):
     if file.filename == '':
-        return jsonify({'error': 'Nom de fichier vide'}), 400
+        raise ValueError("Nom de l’image vide")
 
     filename = secure_filename(file.filename)
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
+    return filepath
 
-    image_path = filepath  # Stocke le chemin
-    return jsonify({'message': 'Image uploadée', 'filename': filename})
+def save_uploaded_folder(files):
+    if not files:
+        raise ValueError("Aucun fichier reçu pour le dossier")
 
-@app.route('/set-folder', methods=['POST'])
-def set_folder():
-    global selected_folder
-    if 'files' not in request.files:
-        return jsonify({'error': 'Aucun fichier reçu'}), 400
-
-    files = request.files.getlist('files')
-
-    # On extrait le nom du dossier parent à partir du chemin relatif du premier fichier
-    first_file_path = files[0].filename
-    folder_name = first_file_path.split('/')[0]  # ex: ios_2022-01-12_16.32.48_000_14911412476
-
-    # Création du dossier de destination dans "uploads"
-    uploads_base = os.path.join(os.getcwd(), 'uploads')
-    target_folder = os.path.join(uploads_base, folder_name)
-    os.makedirs(target_folder, exist_ok=True)
+    first_path = files[0].filename
+    folder_name = first_path.split('/')[0]
+    base_path = os.path.join(os.getcwd(), 'uploads')
+    folder_path = os.path.join(base_path, folder_name)
+    os.makedirs(folder_path, exist_ok=True)
 
     for file in files:
-        relative_path = file.filename  # contient le chemin relatif comme "folder/sensors.txt"
-        destination_path = os.path.join(uploads_base, relative_path)
-        os.makedirs(os.path.dirname(destination_path), exist_ok=True)
-        file.save(destination_path)
+        relative_path = file.filename
+        destination = os.path.join(base_path, relative_path)
+        os.makedirs(os.path.dirname(destination), exist_ok=True)
+        file.save(destination)
 
-    selected_folder = target_folder
+    return folder_path
 
-    return jsonify({'message': 'Fichiers enregistrés', 'folder': folder_name})
+def run_geopose_processing(image_path, folder_path):
+    imagestxt = os.path.join(folder_path, 'images.txt')
+    sensors = os.path.join(folder_path, 'sensors.txt')
+    bt = os.path.join(folder_path, 'bt.txt')
+    wifi = os.path.join(folder_path, 'wifi.txt')
+    traj = os.path.join(folder_path, 'trajectories.txt')
+    out = os.path.join(os.getcwd(), 'data', 'lamar', 'out')
 
-@app.route('/run-bash', methods=['GET'])
-def run_bash_command():
-    try:
-        imagestxt_path = os.path.join(selected_folder, 'images.txt')
-        sensors_path = os.path.join(selected_folder, 'sensors.txt')
-        bt_path = os.path.join(selected_folder, 'bt.txt')
-        wifi_path = os.path.join(selected_folder, 'wifi.txt')
-        traj_path = os.path.join(selected_folder, 'trajectories.txt')
-        out_path = os.path.join(os.getcwd(), 'data', 'lamar', 'out')
+    command = [
+        'python3', 'demo_client.py',
+        '--image', image_path,
+        '--imagestxt', imagestxt,
+        '--sensors', sensors,
+        '--bt', bt,
+        '--wifi', wifi,
+        '--trajectories', traj,
+        '--output', out
+    ]
 
-        command = [
-            'python3', 'demo_client.py',
-            '--image', image_path,
-            '--imagestxt', imagestxt_path,
-            '--sensors', sensors_path,
-            '--bt', bt_path,
-            '--wifi', wifi_path,
-            '--trajectories', traj_path,
-            '--output', out_path
-        ]
+    result = subprocess.run(command, capture_output=True, text=True)
 
-        result = subprocess.run(command, capture_output=True, text=True)
-        print(result)
-        if result.returncode != 0:
-            return jsonify({
-                'error': 'La commande a échoué',
-                'stderr': result.stderr.strip(),
-                'returncode': result.returncode
-            }), 500
+    if result.returncode != 0:
+        raise RuntimeError(f"Échec de la commande:\n{result.stderr.strip()}")
 
-        output_lines = result.stdout.splitlines()
-        
-        try:
-            json_str = output_lines[1].strip()
-            
-            json_str = re.sub(r'\s*([-+]?\d*\.\d+|\d+)\s*', r'\1', json_str)  # Clean the numbers
-            json_data = json.loads(json_str) 
+    return parse_output_json(result.stdout)
 
-            if isinstance(json_data.get('geopose', {}).get('position', {}).get('h'), str):
-                json_data['geopose']['position']['h'] = float(json_data['geopose']['position']['h'])
-            if isinstance(json_data.get('geopose', {}).get('position', {}).get('lat'), str):
-                json_data['geopose']['position']['lat'] = float(json_data['geopose']['position']['lat'])
-            if isinstance(json_data.get('geopose', {}).get('position', {}).get('lon'), str):
-                json_data['geopose']['position']['lon'] = float(json_data['geopose']['position']['lon'])
-            
-            for key in ['w', 'x', 'y', 'z']:
-                if isinstance(json_data.get('geopose', {}).get('quaternion', {}).get(key), str):
-                    json_data['geopose']['quaternion'][key] = float(json_data['geopose']['quaternion'][key])
-        except Exception as e:
-            return jsonify({
-                'error': 'Erreur de décodage JSON',
-                'message': str(e)
-            }), 500
-        
-        ordered_data = {'type':json_data.get('type'),'id':json_data.get('id'),'timestamp':json_data.get('timestamp'),'geopose':json_data.get('geopose')}
+def parse_output_json(stdout_text):
+    lines = stdout_text.splitlines()
+    if len(lines) < 2:
+        raise ValueError("Sortie inattendue du script")
 
-        return ordered_data
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    json_str = lines[1].strip()
+    json_str = re.sub(r'\s*([-+]?\d*\.\d+|\d+)\s*', r'\1', json_str)
+    data = json.loads(json_str)
+
+    pos = data.get('geopose', {}).get('position', {})
+    quat = data.get('geopose', {}).get('quaternion', {})
+
+    for key in ['h', 'lat', 'lon']:
+        if isinstance(pos.get(key), str):
+            pos[key] = float(pos[key])
+
+    for key in ['w', 'x', 'y', 'z']:
+        if isinstance(quat.get(key), str):
+            quat[key] = float(quat[key])
+
+    return {
+        'type': data.get('type'),
+        'id': data.get('id'),
+        'timestamp': data.get('timestamp'),
+        'geopose': data.get('geopose'),
+        'output': stdout_text  # Optionnel
+    }
+
+
     
 # Swagger UI route
 SWAGGER_URL = '/swagger'

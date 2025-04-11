@@ -13,19 +13,6 @@ services:
       - reseau
     volumes:
       - output_volume:/output
-  client_web:
-    image: lamapi-client_web
-    build:
-      context: ./python
-      dockerfile: Dockerfile2
-    container_name: client
-    restart: unless-stopped
-    ports:
-      - 8080:8080
-    networks:
-      - reseau
-    depends_on:
-      - server
 volumes:
   output_volume:
     external: true
