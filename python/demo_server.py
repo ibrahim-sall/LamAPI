@@ -6,17 +6,13 @@
 # SPDX-License-Identifier: MIT
 
 
-from flask import Flask, request, jsonify, make_response, abort, render_template, send_from_directory
-from werkzeug.utils import secure_filename
+from flask import Flask, request, jsonify, make_response, abort, render_template
 from argparse import ArgumentParser
-import base64
-import os
-import json
 from georeference.georef import convert_to_wgs84 
 from flask_swagger_ui import get_swaggerui_blueprint
 from oscp.geoposeprotocol import *
-from demo_docker import *
-
+from server_func.demo_docker import *
+from server_func.to_capture import *
 
 
 parser = ArgumentParser()
@@ -39,15 +35,14 @@ args = parser.parse_args()
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'uploads')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+upload_folder = configure_upload_folder()
 
 @app.route('/')
 def home():
     return render_template('index.html')
+
 ##############################################
+
 @app.route('/process', methods=['POST'])
 def process():
     if 'image' not in request.files or 'files' not in request.files:
@@ -57,7 +52,7 @@ def process():
     folder_files = request.files.getlist('files')
 
     try:
-        image_path = save_uploaded_image(image_file)
+        image_path = save_uploaded_image(image_file, upload_folder)
         selected_folder = save_uploaded_folder(folder_files)
         output = run_geopose_processing(image_path, selected_folder)
         return jsonify(output)
@@ -70,90 +65,6 @@ def process():
         return jsonify({'error': 'Erreur inattendue', 'message': str(e)}), 500
 
 ##############################################
-
-    
-def save_uploaded_image(file):
-    if file.filename == '':
-        raise ValueError("Nom de l’image vide")
-
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(filepath)
-    return filepath
-
-def save_uploaded_folder(files):
-    if not files:
-        raise ValueError("Aucun fichier reçu pour le dossier")
-
-    first_path = files[0].filename
-    folder_name = first_path.split('/')[0]
-    base_path = os.path.join(os.getcwd(), 'uploads')
-    folder_path = os.path.join(base_path, folder_name)
-    os.makedirs(folder_path, exist_ok=True)
-
-    for file in files:
-        relative_path = file.filename
-        destination = os.path.join(base_path, relative_path)
-        os.makedirs(os.path.dirname(destination), exist_ok=True)
-        file.save(destination)
-
-    return folder_path
-
-def run_geopose_processing(image_path, folder_path):
-    imagestxt = os.path.join(folder_path, 'images.txt')
-    sensors = os.path.join(folder_path, 'sensors.txt')
-    bt = os.path.join(folder_path, 'bt.txt')
-    wifi = os.path.join(folder_path, 'wifi.txt')
-    traj = os.path.join(folder_path, 'trajectories.txt')
-    out = os.path.join(os.getcwd(), 'data', 'lamar', 'out')
-
-    command = [
-        'python3', 'demo_client.py',
-        '--image', image_path,
-        '--imagestxt', imagestxt,
-        '--sensors', sensors,
-        '--bt', bt,
-        '--wifi', wifi,
-        '--trajectories', traj,
-        '--output', out
-    ]
-
-    result = subprocess.run(command, capture_output=True, text=True)
-
-    if result.returncode != 0:
-        raise RuntimeError(f"Échec de la commande:\n{result.stderr.strip()}")
-
-    return parse_output_json(result.stdout)
-
-def parse_output_json(stdout_text):
-    lines = stdout_text.splitlines()
-    if len(lines) < 2:
-        raise ValueError("Sortie inattendue du script")
-
-    json_str = lines[1].strip()
-    json_str = re.sub(r'\s*([-+]?\d*\.\d+|\d+)\s*', r'\1', json_str)
-    data = json.loads(json_str)
-
-    pos = data.get('geopose', {}).get('position', {})
-    quat = data.get('geopose', {}).get('quaternion', {})
-
-    for key in ['h', 'lat', 'lon']:
-        if isinstance(pos.get(key), str):
-            pos[key] = float(pos[key])
-
-    for key in ['w', 'x', 'y', 'z']:
-        if isinstance(quat.get(key), str):
-            quat[key] = float(quat[key])
-
-    return {
-        'type': data.get('type'),
-        'id': data.get('id'),
-        'timestamp': data.get('timestamp'),
-        'geopose': data.get('geopose'),
-        'output': stdout_text  # Optionnel
-    }
-
-
     
 # Swagger UI route
 SWAGGER_URL = '/swagger'
@@ -188,11 +99,6 @@ def localize():
     if geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes is None:
         abort(400, description='request has no image')
     imgdata = base64.b64decode(geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes)
-
-    # DEBUG
-    #print("Request:")
-    #print(geoPoseRequest.toJson())
-    #print()
 
     write_data(imgdata, geoPoseRequest)
     cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
