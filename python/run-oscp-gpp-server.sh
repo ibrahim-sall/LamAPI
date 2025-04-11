@@ -21,4 +21,4 @@ else
 fi
 
 
-python3 demo_server.py -output_path volume_output
+python3 demo_server.py -output_path /mnt/lamas/data
