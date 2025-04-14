@@ -1,5 +1,5 @@
 import numpy as np
-from z_interpolation import get_elevation
+from .z_interpolation import get_elevation
 
 """Here we defined our reference points in local and WGS84 coordinates 
 It comes from images that we placed on street view"""

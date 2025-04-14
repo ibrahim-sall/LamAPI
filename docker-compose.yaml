@@ -1,18 +1,24 @@
 # compose.yaml
 services:
   server:
-    image: lamapi-server
-    build:
-      context: ./python
-      dockerfile: Dockerfile
+    image: python:3.10-slim
     container_name: server
     restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DATA_DIR=/mnt/lamas/data
+      - IMAGE_NAME="ghcr.io/microsoft/lamar-benchmark/lamar"
+      - DOCKER_RUN="docker run --runtime=nvidia --shm-size=26G --gpus all -v /mnt/lamas:/mnt/lamas -v $DATA_DIR:/output -e DATA_DIR=$DATA_DIR -e MPLCONFIGDIR=$DATA_DIR/matplotlib_config -e OUTPUT_DIR=/output $IMAGE_NAME"
+
     ports:
       - 5000:5000
     networks:
       - reseau
     volumes:
       - output_volume:/output
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: [ "/app/server.sh" ]
   client_web:
     image: lamapi-client_web
     build:
@@ -20,6 +26,8 @@ services:
       dockerfile: Dockerfile2
     container_name: client
     restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
     ports:
       - 8080:8080
     networks:

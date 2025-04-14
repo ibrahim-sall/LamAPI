@@ -78,9 +78,24 @@ def localize():
     #print(geoPoseRequest.toJson())
     #print()
 
-    write_data(imgdata, geoPoseRequest)
-    docker_run, cmd = command(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
-    run(docker_run, cmd)
+    try:
+        print("Starting to write data...")
+        write_data(imgdata, geoPoseRequest)
+        print("Data writing completed successfully.")
+    except Exception as e:
+        print(f"Error during data writing: {e}")
+        raise
+
+    try:
+        print("Preparing to run Docker command...")
+        docker_run, cmd = command(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path, scene=args.dataset)
+        print(f"Docker run command: {docker_run}")
+        print(f"Command to execute: {cmd}")
+        run(docker_run, cmd)
+        print("Docker command executed successfully.")
+    except Exception as e:
+        print(f"Error during Docker command execution: {e}")
+        raise
 
     POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_hololens/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/rig/poses.txt'
 
