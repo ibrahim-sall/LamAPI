@@ -92,7 +92,6 @@ def localize():
         print(f"Docker run command: {docker_run}")
         print(f"Command to execute: {cmd}")
         run(docker_run, cmd)
-        print("Docker command executed successfully.")
     except Exception as e:
         print(f"Error during Docker command execution: {e}")
         raise
