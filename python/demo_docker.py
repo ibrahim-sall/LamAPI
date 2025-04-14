@@ -1,5 +1,6 @@
 import os 
 import docker
+import subprocess
 
 
 def command(data_dir, output_dir, scene, ref_id="map", query_id="query_phone", 
@@ -25,9 +26,9 @@ def run(docker_run: str, command: list):
     try:
         client = docker.from_env()
         full_command = " ".join(command)
-        print(f"Running Docker container with command: {docker_run} {full_command}")
+        print(f"Running Docker container with command: {full_command}")
 
-        image_id = os.getenv("IMAGE_ID")
+        image_id = os.getenv("DOCKER_IMAGE_ID")
         if not image_id:
             raise ValueError("IMAGE_ID environment variable is not set.")
 
@@ -37,7 +38,7 @@ def run(docker_run: str, command: list):
             detach=True,
             volumes={
             "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "rw"},
-            "/output": {"bind": "/output", "mode": "rw"}
+            "/var/lib/docker/volumes/output_volume/": {"bind": "/output", "mode": "rw"}
             },
             runtime="nvidia",
             shm_size="26G",
