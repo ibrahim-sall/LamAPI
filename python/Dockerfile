@@ -12,7 +12,7 @@ WORKDIR /app
 COPY . /app
 
 # Install Python dependencies
-RUN pip install --no-cache-dir flask requests pillow tqdm numpy pyproj laspy flask_swagger_ui
+RUN pip install --no-cache-dir flask requests pillow tqdm numpy pyproj laspy flask_swagger_ui docker
 
 # Expose port
 EXPOSE 5000

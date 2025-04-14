@@ -79,8 +79,8 @@ def localize():
     #print()
 
     write_data(imgdata, geoPoseRequest)
-    cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
-    run_docker_command(cmd)
+    docker_run, cmd = command(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
+    run(docker_run, cmd)
 
     POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_hololens/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/rig/poses.txt'
 
