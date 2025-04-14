@@ -26,24 +26,29 @@ def run(docker_run: str, command: list):
         client = docker.from_env()
         full_command = " ".join(command)
         print(f"Running Docker container with command: {docker_run} {full_command}")
+
+        image_name = os.getenv("IMAGE_NAME")
+        if not image_name:
+            raise ValueError("IMAGE_NAME environment variable is not set.")
+
+        print(f"Using Docker image: {image_name}")
         container = client.containers.run(
-            docker_run.split(" ")[2],
-            full_command,
-            runtime="nvidia",
+            image=image_name,
+            command=full_command,
             detach=True,
-            remove=True,
+            volumes={
+                "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "rw"},
+                "/mnt/lamas/data": {"bind": "/output", "mode": "rw"}
+            },
+            runtime="nvidia",
+            shm_size="26G",
             environment={
                 "DATA_DIR": os.getenv("DATA_DIR"),
                 "MPLCONFIGDIR": f"{os.getenv('DATA_DIR')}/matplotlib_config",
                 "OUTPUT_DIR": "/output"
-            },
-            volumes={
-                "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "rw"},
-                os.getenv("DATA_DIR"): {"bind": "/output", "mode": "rw"}
-            },
-            shm_size="26G",
-            gpus="all"
+            }
         )
+
         logs = container.logs(stream=True)
         for log in logs:
             print(log.decode("utf-8").strip())
