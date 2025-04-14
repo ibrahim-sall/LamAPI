@@ -24,8 +24,8 @@ parser.add_argument(
     '--output_path', '-output_path',
     type=str,
     required=True,
-    default='/mnt/lamas/OUT',
-    help='Specify the output path for the results. Default is "/mnt/lamas/OUT".'
+    default='/output',
+    help='Specify the output path for the results. Default is "/output".'
 )
 parser.add_argument(
     '--dataset', '-dataset',
