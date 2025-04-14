@@ -27,25 +27,24 @@ def run(docker_run: str, command: list):
         full_command = " ".join(command)
         print(f"Running Docker container with command: {docker_run} {full_command}")
 
-        image_name = os.getenv("IMAGE_NAME")
-        if not image_name:
-            raise ValueError("IMAGE_NAME environment variable is not set.")
+        image_id = os.getenv("IMAGE_ID")
+        if not image_id:
+            raise ValueError("IMAGE_ID environment variable is not set.")
 
-        print(f"Using Docker image: {image_name}")
         container = client.containers.run(
-            image=image_name,
+            image=image_id,
             command=full_command,
             detach=True,
             volumes={
-                "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "rw"},
-                "/mnt/lamas/data": {"bind": "/output", "mode": "rw"}
+            "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "rw"},
+            "/output": {"bind": "/output", "mode": "rw"}
             },
             runtime="nvidia",
             shm_size="26G",
             environment={
-                "DATA_DIR": os.getenv("DATA_DIR"),
-                "MPLCONFIGDIR": f"{os.getenv('DATA_DIR')}/matplotlib_config",
-                "OUTPUT_DIR": "/output"
+            "DATA_DIR": os.getenv("DATA_DIR"),
+            "MPLCONFIGDIR": f"{os.getenv('DATA_DIR')}/matplotlib_config",
+            "OUTPUT_DIR": "/output"
             }
         )
 
