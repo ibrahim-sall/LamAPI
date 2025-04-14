@@ -91,7 +91,7 @@ def check_file(path, name):
     return True
 
 geoPoseRequest = GeoPoseRequest()
-geoPoseRequest.timestamp = datetime.now(timezone.utc).timestamp()*1000 # milliseconds since epoch
+geoPoseRequest.timestamp = int(datetime.now(timezone.utc).timestamp()*1000)
 
 if not check_file(args.image, "image"):
     sys.exit(1)
@@ -104,7 +104,15 @@ else :
     # open it again with PIL just to find out its size
     image = Image.open(args.image)
 
-kCameraSensorId = "ios_2025-04-01_09.00.00_000/cam_phone_00000000001" # default value
+seconds = geoPoseRequest.timestamp // 1000
+millis = geoPoseRequest.timestamp % 1000
+dt = datetime.utcfromtimestamp(seconds)
+
+kCameraSensorId = (
+    "ios_" + dt.strftime("%Y-%m-%d_%H.%M.%S") +
+    f"_{millis:03d}" +
+    "/cam_phone_" + str(geoPoseRequest.timestamp)
+) # default value
 if  check_file(args.imagestxt, "imagestxt"):
     with open(args.imagestxt, 'r') as f:
         lines = f.read().splitlines()[1:]  # skip header
@@ -198,19 +206,6 @@ if check_file(args.trajectories, "trajectories"):
     trajectories_config = [line.strip().split(', ') for line in lines]
     # print("Trajectories config:")
     # print(trajectories_config)
-
-# cameraReading.params = CameraParameters(model=camera_config["camera_model"], modelParams=camera_config["camera_params"])
-
-# kGeolocationSensorId = "my_gps_sensor"
-# geolocationReading = GeolocationReading(sensorId=kGeolocationSensorId)
-# geolocationReading.timestamp = datetime.now(timezone.utc).timestamp()*1000 # milliseconds since epoch
-# geolocationReading.latitude = geolocation_config["lat"]
-# geolocationReading.longitude = geolocation_config["lon"]
-# geolocationReading.altitude = geolocation_config["h"]
-
-# geoPoseRequest.sensors.append(Sensor(type = SensorType.GEOLOCATION, id=kGeolocationSensorId))
-# geoPoseRequest.sensorReadings.geolocationReadings.append(geolocationReading)
-
 
 def write_output(geoposeresponse):
 

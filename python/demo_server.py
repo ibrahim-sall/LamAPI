@@ -23,8 +23,8 @@ parser.add_argument(
     '--output_path', '-output_path',
     type=str,
     required=True,
-    default='volume_output',
-    help='Specify the output path for the results. Default is "volume_output".'
+    default='/mnt/lamas/data',
+    help='Specify the output path for the results. Default is "/mnt/lamas/data".'
 )
 parser.add_argument(
     '--dataset', '-dataset',
@@ -79,7 +79,7 @@ def localize():
     #print()
 
     key_directory = write_data(imgdata, geoPoseRequest)
-    cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset, query_id=key_directory)
+    cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
     run_docker_command(cmd)
 
     POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_phone/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt'
@@ -131,7 +131,7 @@ def write_data(imgdata, geo_pose_request):
 
     try:
         # output_dir = f"{args.output_path}/{geo_pose_request.timestamp}"
-        output_dir = f"{args.output_path}/{args.dataset}/query_phone"
+        output_dir = f"{args.output_path}/{args.dataset}/query_{geo_pose_request.id}"
         proc_dir = f"{output_dir}/proc"
         raw_dir = f"{output_dir}/raw_data/{justId}/images"
         os.makedirs(output_dir, exist_ok=True)
@@ -241,7 +241,7 @@ def write_data(imgdata, geo_pose_request):
                     bt_line = f"{sensor.id}, Apple bluetooth sensor, bluetooth\n"
                     sensor_file.write(bt_line)
 
-        return output_dir
+        return f"query_{geo_pose_request.id}"
 
             
 if __name__ == '__main__':
