@@ -16,7 +16,7 @@ services:
     networks:
       - reseau
     volumes:
-      - output_volume
+      - output_volume:/output
       - /var/run/docker.sock:/var/run/docker.sock
       - ./python:/app
     command: [ "/app/server.sh" ]
