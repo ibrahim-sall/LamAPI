@@ -15,6 +15,7 @@ from georeference.georef import convert_to_wgs84
 from flask_swagger_ui import get_swaggerui_blueprint
 from oscp.geoposeprotocol import *
 from demo_docker import *
+import numpy as np
 
 
 
@@ -117,7 +118,7 @@ def localize():
     geoPose.quaternion.w = last_line[2]
     ###Convertt to WGS84
   
-    geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(np.array(float(last_line[6]), float(last_line[7]), float(last_line[8])))
+    geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(np.array([float(last_line[6]), float(last_line[7]), float(last_line[8])]))
 
     geoPoseResponse = GeoPoseResponse(id = geoPoseRequest.id, timestamp = geoPoseRequest.timestamp)
     geoPoseResponse.geopose = geoPose
