@@ -37,8 +37,8 @@ def run(docker_run: str, command: list):
             command=full_command,
             detach=True,
             volumes={
-            "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "rw"},
-            "/var/lib/docker/volumes/output_volume/": {"bind": "/output", "mode": "rw"}
+            "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "z"},
+            "output_volume": {"bind": "/output", "mode": "rw"}
             },
             runtime="nvidia",
             shm_size="26G",
