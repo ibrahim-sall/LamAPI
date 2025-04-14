@@ -16,8 +16,9 @@ services:
     networks:
       - reseau
     volumes:
-      - output_volume:/output
+      - output_volume
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./python:/app
     command: [ "/app/server.sh" ]
   client_web:
     image: lamapi-client_web
