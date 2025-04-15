@@ -23,8 +23,8 @@ parser.add_argument(
     '--output_path', '-output_path',
     type=str,
     required=True,
-    default='/mnt/lamas/data',
-    help='Specify the output path for the results. Default is "/mnt/lamas/data".'
+    default='/mnt/lamas/OUT',
+    help='Specify the output path for the results. Default is "/mnt/lamas/OUT".'
 )
 parser.add_argument(
     '--dataset', '-dataset',
@@ -131,7 +131,7 @@ def write_data(imgdata, geo_pose_request):
 
     try:
         # output_dir = f"{args.output_path}/{geo_pose_request.timestamp}"
-        output_dir = f"{args.output_path}/{args.dataset}/query_{geo_pose_request.id}"
+        output_dir = f"{os.environ.get("DATA_DIR")}/{args.dataset}/sessions/query_{geo_pose_request.id}"
         proc_dir = f"{output_dir}/proc"
         raw_dir = f"{output_dir}/raw_data/{justId}/images"
         os.makedirs(output_dir, exist_ok=True)

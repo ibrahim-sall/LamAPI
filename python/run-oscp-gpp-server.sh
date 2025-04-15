@@ -19,4 +19,4 @@ else
 fi
 
 
-python3 demo_server.py -output_path /mnt/lamas/data
+python3 demo_server.py -output_path /mnt/lamas/OUT
