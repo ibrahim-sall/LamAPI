@@ -15,6 +15,7 @@ from georeference.georef import convert_to_wgs84
 from flask_swagger_ui import get_swaggerui_blueprint
 from oscp.geoposeprotocol import *
 from demo_docker import *
+import numpy as np
 
 
 
@@ -23,8 +24,8 @@ parser.add_argument(
     '--output_path', '-output_path',
     type=str,
     required=True,
-    default='/mnt/lamas/OUT',
-    help='Specify the output path for the results. Default is "/mnt/lamas/OUT".'
+    default='/output',
+    help='Specify the output path for the results. Default is "/output".'
 )
 parser.add_argument(
     '--dataset', '-dataset',
@@ -78,9 +79,23 @@ def localize():
     #print(geoPoseRequest.toJson())
     #print()
 
-    key_directory = write_data(imgdata, geoPoseRequest)
-    cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
-    run_docker_command(cmd)
+    try:
+        print("Starting to write data...")
+        write_data(imgdata, geoPoseRequest)
+        print("Data writing completed successfully.")
+    except Exception as e:
+        print(f"Error during data writing: {e}")
+        raise
+
+    try:
+        print("Preparing to run Docker command...")
+        docker_run, cmd = command(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path, scene=args.dataset)
+        print(f"Docker run command: {docker_run}")
+        print(f"Command to execute: {cmd}")
+        run(docker_run, cmd)
+    except Exception as e:
+        print(f"Error during Docker command execution: {e}")
+        raise
 
     POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_phone/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt'
     if not os.path.exists(POSES_FILE):
@@ -101,7 +116,7 @@ def localize():
     geoPose.quaternion.w = last_line[2]
     ###Convertt to WGS84
   
-    geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(float(last_line[6]), float(last_line[7]), float(last_line[8]))
+    geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(np.array([float(last_line[6]), float(last_line[7]), float(last_line[8])]))
 
     geoPoseResponse = GeoPoseResponse(id = geoPoseRequest.id, timestamp = geoPoseRequest.timestamp)
     geoPoseResponse.geopose = geoPose
