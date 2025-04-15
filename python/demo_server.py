@@ -6,16 +6,13 @@
 # SPDX-License-Identifier: MIT
 
 
-from flask import Flask, request, jsonify, make_response, abort
+from flask import Flask, request, jsonify, make_response, abort, render_template
 from argparse import ArgumentParser
-import base64
-import os
-import json
 from georeference.georef import convert_to_wgs84 
 from flask_swagger_ui import get_swaggerui_blueprint
 from oscp.geoposeprotocol import *
-from demo_docker import *
-
+from server_func.demo_docker import *
+from server_func.to_capture import *
 
 
 parser = ArgumentParser()
@@ -38,7 +35,37 @@ args = parser.parse_args()
 
 app = Flask(__name__)
 
+upload_folder = configure_upload_folder()
 
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+##############################################
+
+@app.route('/process', methods=['POST'])
+def process():
+    if 'image' not in request.files or 'files' not in request.files:
+        return jsonify({'error': 'Image ou fichiers du dossier manquants'}), 400
+
+    image_file = request.files['image']
+    folder_files = request.files.getlist('files')
+
+    try:
+        image_path = save_uploaded_image(image_file, upload_folder)
+        selected_folder = save_uploaded_folder(folder_files)
+        output = run_geopose_processing(image_path, selected_folder)
+        return jsonify(output)
+
+    except ValueError as ve:
+        return jsonify({'error': str(ve)}), 400
+    except RuntimeError as re:
+        return jsonify({'error': str(re)}), 500
+    except Exception as e:
+        return jsonify({'error': 'Erreur inattendue', 'message': str(e)}), 500
+
+##############################################
+    
 # Swagger UI route
 SWAGGER_URL = '/swagger'
 API_URL = '/static/swagger.json'
@@ -72,11 +99,6 @@ def localize():
     if geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes is None:
         abort(400, description='request has no image')
     imgdata = base64.b64decode(geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes)
-
-    # DEBUG
-    #print("Request:")
-    #print(geoPoseRequest.toJson())
-    #print()
 
     write_data(imgdata, geoPoseRequest)
     cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
