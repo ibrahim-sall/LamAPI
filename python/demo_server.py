@@ -97,10 +97,11 @@ def localize():
         print(f"Error during Docker command execution: {e}")
         raise
 
-    POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_phone/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt'
-    if not os.path.exists(POSES_FILE):
+    poses_path = f"/output/{args.dataset}+/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
+
+    if not os.path.exists(poses_path ):
         return make_response(jsonify({"error": "The file './poses.txt' does not exist."}), 500)
-    with open(POSES_FILE, "r") as f:
+    with open(poses_path , "r") as f:
         f.seek(0, 2)
         while f.tell() > 0:
             f.seek(f.tell() - 2, 0)
