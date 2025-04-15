@@ -89,7 +89,7 @@ def localize():
 
     try:
         print("Preparing to run Docker command...")
-        docker_run, cmd = command(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path, scene=args.dataset)
+        docker_run, cmd = command(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path, query_id=f"query_{geoPoseRequest.id}", scene=args.dataset)
         print(f"Docker run command: {docker_run}")
         print(f"Command to execute: {cmd}")
         run(docker_run, cmd)
@@ -146,7 +146,8 @@ def write_data(imgdata, geo_pose_request):
 
     try:
         # output_dir = f"{args.output_path}/{geo_pose_request.timestamp}"
-        output_dir = f"{os.environ.get("DATA_DIR")}/{args.dataset}/sessions/query_{geo_pose_request.id}"
+        data_dir = os.getenv("DATA_DIR")
+        output_dir = f"{data_dir}/{args.dataset}/sessions/query_{geo_pose_request.id}"
         proc_dir = f"{output_dir}/proc"
         raw_dir = f"{output_dir}/raw_data/{justId}/images"
         os.makedirs(output_dir, exist_ok=True)
@@ -163,7 +164,7 @@ def write_data(imgdata, geo_pose_request):
         query_file.write(f"{justId}\n")
 
     try:
-        image_path = f"{raw_dir}/{geo_pose_request.timestamp}.png"
+        image_path = f"{raw_dir}/{geo_pose_request.sensorReadings.cameraReadings[0].timestamp}.jpg"
         with open(image_path, 'wb') as image_file:
             image_file.write(imgdata)
             print(f"Image écrite : {image_path}")
@@ -194,7 +195,7 @@ def write_data(imgdata, geo_pose_request):
             "filename": "images.txt",
             "header": "# timestamp, sensor_id, image_path\n",
             "line_format": lambda reading: [
-                f"{reading.timestamp}, {reading.sensorId}, {output_dir}/{reading.timestamp}.png\n"
+                f"{reading.timestamp}, {reading.sensorId}, {justId}/images/{reading.timestamp}.jpg\n"
             ]
         }
     }

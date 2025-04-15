@@ -150,7 +150,8 @@ if check_file(args.sensors, "sensors"):
     # print(sensors_config)
 
     cameraReading.params.model = sensors_config[0][3]
-    cameraReading.params.modelParams = sensors_config[0][4:]
+    if len(sensors_config[0]) >= 6 :
+        cameraReading.params.modelParams = sensors_config[0][6:]
 
     geoPoseRequest.sensors.append(Sensor(type = SensorType.CAMERA, id=kCameraSensorId, name=sensors_config[0][1], model=sensors_config[0][3]))
     geoPoseRequest.sensorReadings.cameraReadings.append(cameraReading)
