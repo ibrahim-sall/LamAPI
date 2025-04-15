@@ -1,18 +1,40 @@
 # compose.yaml
 services:
   server:
-    image: lamapi-server
-    build:
-      context: ./python
-      dockerfile: Dockerfile
+    image: python:3.10-slim
     container_name: server
     restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DOCKER_IMAGE_ID=0e8811ef3c92
+      - DATA_DIR=/mnt/lamas/data
+      - DOCKER_RUN="docker run --runtime=nvidia --shm-size=26G --gpus all -v /mnt/lamas:/mnt/lamas -v output_volume:/output -e DATA_DIR=$DATA_DIR -e MPLCONFIGDIR=$DATA_DIR/matplotlib_config -e OUTPUT_DIR=/output $DOCKER_IMAGE_ID"
     ports:
       - 5000:5000
     networks:
       - reseau
     volumes:
       - output_volume:/output
+      - /mnt/lamas:/mnt/lamas
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./python:/app
+    command: [ "/app/server.sh" ]
+  client_web:
+    image: lamapi-client_web
+    build:
+      context: ./python
+      dockerfile: Dockerfile2
+    container_name: client
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    ports:
+      - 8080:8080
+    networks:
+      - reseau
+    depends_on:
+      - server
 volumes:
   output_volume:
     external: true

@@ -11,6 +11,8 @@ from argparse import ArgumentParser
 from georeference.georef import convert_to_wgs84 
 from flask_swagger_ui import get_swaggerui_blueprint
 from oscp.geoposeprotocol import *
+import numpy as np
+
 from server_func.demo_docker import *
 from server_func.to_capture import *
 
@@ -20,8 +22,8 @@ parser.add_argument(
     '--output_path', '-output_path',
     type=str,
     required=True,
-    default='/mnt/lamas/OUT',
-    help='Specify the output path for the results. Default is "/mnt/lamas/OUT".'
+    default='/output',
+    help='Specify the output path for the results. Default is "/output".'
 )
 parser.add_argument(
     '--dataset', '-dataset',
@@ -100,15 +102,29 @@ def localize():
         abort(400, description='request has no image')
     imgdata = base64.b64decode(geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes)
 
-    write_data(imgdata, geoPoseRequest)
-    cmd = create_docker_command_lamar(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path,scene=args.dataset)
-    run_docker_command(cmd)
+    try:
+        print("Starting to write data...")
+        write_data(imgdata, geoPoseRequest)
+        print("Data writing completed successfully.")
+    except Exception as e:
+        print(f"Error during data writing: {e}")
+        raise
 
-    POSES_FILE = '/output/' + args.dataset + '/pose_estimation/query_hololens/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/rig/poses.txt'
+    try:
+        print("Preparing to run Docker command...")
+        docker_run, cmd = command(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path, query_id=f"query_{geoPoseRequest.id}", scene=args.dataset)
+        print(f"Docker run command: {docker_run}")
+        print(f"Command to execute: {cmd}")
+        run(docker_run, cmd)
+    except Exception as e:
+        print(f"Error during Docker command execution: {e}")
+        raise
 
-    if not os.path.exists(POSES_FILE):
+    poses_path = f"/output/{args.dataset}/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
+
+    if not os.path.exists(poses_path ):
         return make_response(jsonify({"error": "The file './poses.txt' does not exist."}), 500)
-    with open(POSES_FILE, "r") as f:
+    with open(poses_path , "r") as f:
         f.seek(0, 2)
         while f.tell() > 0:
             f.seek(f.tell() - 2, 0)
@@ -117,7 +133,6 @@ def localize():
                 break
         last_line = f.readline().strip().split(',')
 
-
     geoPose = GeoPose()
     geoPose.quaternion.x = last_line[3]
     geoPose.quaternion.y = last_line[4]
@@ -125,15 +140,13 @@ def localize():
     geoPose.quaternion.w = last_line[2]
     ###Convertt to WGS84
   
-    geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(float(last_line[6]), float(last_line[7]), float(last_line[8]))
+    geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(np.array([float(last_line[6]), float(last_line[7]), float(last_line[8])]))
 
     geoPoseResponse = GeoPoseResponse(id = geoPoseRequest.id, timestamp = geoPoseRequest.timestamp)
     geoPoseResponse.geopose = geoPose
 
-    # DEBUG
-    #print("Response:")
-    #print(geoPoseResponse.toJson())
-    #print()
+    print("Response:")
+    print(geoPoseResponse.toJson())
 
     try:
         response = make_response(geoPoseResponse.toJson(), 200)
@@ -150,16 +163,30 @@ def write_data(imgdata, geo_pose_request):
         imgdata (bytes): Les données de l'image en bytes.
         geo_pose_request (GeoPoseRequest): La requête GeoPose contenant les lectures des capteurs.
     """
+
+    justId = geo_pose_request.sensorReadings.cameraReadings[0].sensorId.split("/")[0]
+
     try:
-        output_dir = f"{args.output_path}/{geo_pose_request.timestamp}"
+        # output_dir = f"{args.output_path}/{geo_pose_request.timestamp}"
+        data_dir = os.getenv("DATA_DIR")
+        output_dir = f"{data_dir}/{args.dataset}/sessions/query_{geo_pose_request.id}"
+        proc_dir = f"{output_dir}/proc"
+        raw_dir = f"{output_dir}/raw_data/{justId}/images"
         os.makedirs(output_dir, exist_ok=True)
+        os.makedirs(proc_dir, exist_ok=True)
+        os.makedirs(raw_dir, exist_ok=True)
         print(f"Répertoire créé : {output_dir}")
     except Exception as e:
         print(f"Erreur lors de la création du répertoire : {e}")
         raise
+    
+    # Création fichier subsessions
+    query_path = f"{proc_dir}/subsessions.txt"
+    with open(query_path, "w") as query_file:
+        query_file.write(f"{justId}\n")
 
     try:
-        image_path = f"{output_dir}/{geo_pose_request.timestamp}.png"
+        image_path = f"{raw_dir}/{geo_pose_request.sensorReadings.cameraReadings[0].timestamp}.jpg"
         with open(image_path, 'wb') as image_file:
             image_file.write(imgdata)
             print(f"Image écrite : {image_path}")
@@ -190,29 +217,69 @@ def write_data(imgdata, geo_pose_request):
             "filename": "images.txt",
             "header": "# timestamp, sensor_id, image_path\n",
             "line_format": lambda reading: [
-                f"{reading.timestamp}, {reading.sensorId}, {output_dir}/{reading.timestamp}.png\n"
+                f"{reading.timestamp}, {reading.sensorId}, {justId}/images/{reading.timestamp}.jpg\n"
             ]
         }
     }
 
     for attribute, details in sensor_readings.items():
-        if hasattr(geo_pose_request.sensorReadings, attribute):
-            readings = getattr(geo_pose_request.sensorReadings, attribute)
-            if readings:
-                print(f"Traitement des données pour {attribute} :")
-                try:
-                    file_path = f"{output_dir}/{details['filename']}"
-                    with open(file_path, 'w', encoding='utf-8') as sensor_file:
-                        sensor_file.write(details['header'])
+        file_path = f"{output_dir}/{details['filename']}"
+        readings = getattr(geo_pose_request.sensorReadings, attribute, [])
+
+        # Cas spécial : cameraReadings → créer le fichier même si readings est vide
+        if readings or attribute == "cameraReadings":
+            print(f"Traitement des données pour {attribute} :")
+            try:
+                with open(file_path, 'w', encoding='utf-8') as sensor_file:
+                    sensor_file.write(details['header'])
+                    if readings:
                         for reading in readings:
                             lines = details['line_format'](reading)
                             sensor_file.writelines(lines)
-                        print(f"Fichier écrit : {file_path}")
-                except Exception as e:
-                    print(f"Erreur lors de l'écriture du fichier {details['filename']} : {e}")
-                    raise
-            else:
-                print(f"Aucune donnée trouvée pour {attribute}, fichier ignoré.")
+                    print(f"Fichier écrit : {file_path}")
+            except Exception as e:
+                print(f"Erreur lors de l'écriture du fichier {details['filename']} : {e}")
+                raise
+        else:
+            print(f"Aucune donnée trouvée pour {attribute}, fichier ignoré.")
+
+
+    # Création fichier queries
+    query_path = f"{output_dir}/queries.txt"
+    with open(query_path, "w") as query_file:
+        query_file.write(f"{geo_pose_request.sensorReadings.cameraReadings[0].timestamp}, {geo_pose_request.sensorReadings.cameraReadings[0].sensorId}\n")
+
+    # Création fichier sensors
+    query_path = f"{output_dir}/sensors.txt"
+    with open(query_path, 'w') as sensor_file:
+        sensor_file.write("# sensor_id, name, sensor_type, [sensor_params]+\n")
+
+        if hasattr(geo_pose_request.sensorReadings, "cameraReadings") and geo_pose_request.sensorReadings.cameraReadings:
+            cam = geo_pose_request.sensorReadings.cameraReadings[0]
+
+            sensor_id = cam.sensorId
+            name = f"phone camera for timestamp {cam.timestamp}"
+            sensor_type = "camera"
+            width, height = cam.size if cam.size else (0, 0)
+            if hasattr(cam, "params") :
+                model = cam.params.model if hasattr(cam.params, "model") else ""
+                params = cam.params.modelParams if hasattr(cam.params, "modelParams") else ""
+
+            param_str = ', '.join(str(p) for p in params)
+            cam_line = f"{sensor_id}, {name}, {sensor_type}, {model}, {width}, {height}"
+            if param_str:
+                cam_line += f", {param_str}"
+            cam_line += "\n"
+
+            sensor_file.write(cam_line)
+
+        if hasattr(geo_pose_request, "sensors"):
+            for sensor in geo_pose_request.sensors:
+                if hasattr(sensor, "type") and sensor.type == SensorType.BLUETOOTH:
+                    bt_line = f"{sensor.id}, Apple bluetooth sensor, bluetooth\n"
+                    sensor_file.write(bt_line)
+
+        return f"query_{geo_pose_request.id}"
 
             
 if __name__ == '__main__':
