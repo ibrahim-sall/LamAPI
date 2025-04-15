@@ -46,7 +46,7 @@ def run_geopose_processing(image_path, folder_path):
     out = os.path.join(os.getcwd(), 'data', 'lamar', 'out')
 
     command = [
-        'python3', 'demo_client.py',
+        'python3', '/app/demo_client.py',
         '--image', image_path,
         '--imagestxt', imagestxt,
         '--sensors', sensors,
