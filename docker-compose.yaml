@@ -20,21 +20,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./python:/app
     command: [ "/app/server.sh" ]
-  client_web:
-    image: lamapi-client_web
-    build:
-      context: ./python
-      dockerfile: Dockerfile2
-    container_name: client
-    restart: unless-stopped
-    environment:
-      - PYTHONUNBUFFERED=1
-    ports:
-      - 8080:8080
-    networks:
-      - reseau
-    depends_on:
-      - server
 volumes:
   output_volume:
     external: true
