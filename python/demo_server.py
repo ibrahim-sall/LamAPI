@@ -97,7 +97,7 @@ def localize():
         print(f"Error during Docker command execution: {e}")
         raise
 
-    poses_path = f"/output/{args.dataset}+/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
+    poses_path = f"/output/{args.dataset}/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
 
     if not os.path.exists(poses_path ):
         return make_response(jsonify({"error": "The file './poses.txt' does not exist."}), 500)
@@ -122,10 +122,8 @@ def localize():
     geoPoseResponse = GeoPoseResponse(id = geoPoseRequest.id, timestamp = geoPoseRequest.timestamp)
     geoPoseResponse.geopose = geoPose
 
-    # DEBUG
-    #print("Response:")
-    #print(geoPoseResponse.toJson())
-    #print()
+    print("Response:")
+    print(geoPoseResponse.toJson())
 
     try:
         response = make_response(geoPoseResponse.toJson(), 200)

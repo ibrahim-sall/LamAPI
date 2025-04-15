@@ -37,21 +37,26 @@ def run(docker_run: str, command: list):
             command=full_command,
             detach=True,
             volumes={
-            "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "z"},
-            "output_volume": {"bind": "/output", "mode": "rw"}
+                "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "z"},
+                "output_volume": {"bind": "/output", "mode": "rw"}
             },
             runtime="nvidia",
             shm_size="26G",
             environment={
-            "DATA_DIR": os.getenv("DATA_DIR"),
-            "MPLCONFIGDIR": f"{os.getenv('DATA_DIR')}/matplotlib_config",
-            "OUTPUT_DIR": "/output"
+                "DATA_DIR": os.getenv("DATA_DIR"),
+                "MPLCONFIGDIR": f"{os.getenv('DATA_DIR')}/matplotlib_config",
+                "OUTPUT_DIR": "/output"
             }
         )
 
         logs = container.logs(stream=True)
         for log in logs:
             print(log.decode("utf-8").strip())
+
+        exit_status = container.wait()
+        print(f"Container exited with: {exit_status}")
+
+        container.remove()
     except docker.errors.ContainerError as e:
         print(f"Container error: {e}")
     except docker.errors.ImageNotFound as e:
