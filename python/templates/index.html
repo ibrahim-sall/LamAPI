@@ -47,6 +47,51 @@
         <div id="streetview-link" class="streetview-link-container"></div>
     </main>
     <script type="text/javascript" src="{{ url_for('static', filename='func.js') }}" ></script>
+    <script>
+        function submitAll() {
+            const queryId = "query_" + Date.now();
+            const payload = { query_id: queryId };
+
+            fetch('/run-bash', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.task_id) {
+                    checkTaskStatus(data.task_id);
+                } else {
+                    document.getElementById('status').innerText = 'Erreur: ' + data.error;
+                }
+            })
+            .catch(error => {
+                document.getElementById('status').innerText = 'Erreur: ' + error.message;
+            });
+        }
+
+        function checkTaskStatus(taskId) {
+            const interval = setInterval(() => {
+                fetch(`/task_status/${taskId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.state === 'SUCCESS') {
+                            clearInterval(interval);
+                            document.getElementById('output').innerText = JSON.stringify(data.result, null, 2);
+                        } else if (data.state === 'FAILURE') {
+                            clearInterval(interval);
+                            document.getElementById('status').innerText = 'Erreur: ' + data.status;
+                        } else {
+                            document.getElementById('status').innerText = 'Statut: ' + data.status;
+                        }
+                    })
+                    .catch(error => {
+                        clearInterval(interval);
+                        document.getElementById('status').innerText = 'Erreur: ' + error.message;
+                    });
+            }, 2000);
+        }
+    </script>
 </body>
 
 </html>

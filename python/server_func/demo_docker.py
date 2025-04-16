@@ -1,4 +1,4 @@
-import os 
+import os
 import docker
 import subprocess
 
@@ -30,14 +30,14 @@ def run(docker_run: str, command: list):
 
         image_id = os.getenv("DOCKER_IMAGE_ID")
         if not image_id:
-            raise ValueError("IMAGE_ID environment variable is not set.")
+            raise ValueError("DOCKER_IMAGE_ID environment variable is not set.")
 
         container = client.containers.run(
             image=image_id,
             command=full_command,
             detach=True,
             volumes={
-                "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "z"},
+                "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "rw"},
                 "output_volume": {"bind": "/output", "mode": "rw"}
             },
             runtime="nvidia",
@@ -48,20 +48,23 @@ def run(docker_run: str, command: list):
                 "OUTPUT_DIR": "/output"
             }
         )
-
-        logs = container.logs(stream=True)
-        for log in logs:
+        for log in container.logs(stream=True):
             print(log.decode("utf-8").strip())
 
         exit_status = container.wait()
-        print(f"Container exited with: {exit_status}")
+        print(f"Container exited with status: {exit_status['StatusCode']}")
 
         container.remove()
+        return exit_status['StatusCode']
     except docker.errors.ContainerError as e:
         print(f"Container error: {e}")
+        raise
     except docker.errors.ImageNotFound as e:
         print(f"Image not found: {e}")
+        raise
     except docker.errors.APIError as e:
         print(f"Docker API error: {e}")
+        raise
     except Exception as e:
         print(f"Unexpected error: {e}")
+        raise

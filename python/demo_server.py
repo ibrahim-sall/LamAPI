@@ -15,25 +15,9 @@ import numpy as np
 
 from server_func.demo_docker import *
 from server_func.to_capture import *
+from server_func.celery_app import celery
+from celery import shared_task
 
-
-parser = ArgumentParser()
-parser.add_argument(
-    '--output_path', '-output_path',
-    type=str,
-    required=True,
-    default='/output',
-    help='Specify the output path for the results. Default is "/output".'
-)
-parser.add_argument(
-    '--dataset', '-dataset',
-    type=str,
-    required=False,
-    default='LIN',
-    help='Specify the dataset to use between {CAB, LIN, HGE}. Default is "LIN".'
-)
-
-args = parser.parse_args()
 
 app = Flask(__name__)
 
@@ -154,6 +138,56 @@ def localize():
         print(f"Error writing data: {e}")
         response = make_response(jsonify({"error": "Failed to write data"}), 500)
     return response
+
+@shared_task(name='server_func.run_docker_task')
+def run_docker_task(docker_run, cmd):
+    """
+    Celery task to execute the Docker command.
+    """
+    try:
+        print(f"Running Docker container with command: {' '.join(cmd)}")
+        run(docker_run, cmd)
+        return {"status": "success", "message": "Docker command executed successfully."}
+    except Exception as e:
+        print(f"Error during Docker execution: {e}")
+        return {"status": "failure", "message": str(e)}
+
+@app.route('/run-bash', methods=['POST'])
+def run_bash():
+    """
+    Route to trigger the Docker execution via Celery.
+    """
+    try:
+        docker_run, cmd = command(
+            data_dir=os.getenv("DATA_DIR"),
+            output_dir=args.output_path,
+            query_id=request.json.get('query_id'),
+            scene=args.dataset
+        )
+        print(f"Docker run command: {docker_run}")
+        print(f"Command to execute: {cmd}")
+
+        task = run_docker_task.apply_async(args=[docker_run, cmd])
+        return jsonify({"task_id": task.id}), 202
+    except Exception as e:
+        print(f"Error preparing Docker command: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/task_status/<task_id>', methods=['GET'])
+def task_status(task_id):
+    """
+    Route to check the status of a Celery task.
+    """
+    task = run_docker_task.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        response = {"state": task.state, "status": "En attente..."}
+    elif task.state == 'SUCCESS':
+        response = {"state": task.state, "result": task.result}
+    elif task.state == 'FAILURE':
+        response = {"state": task.state, "status": str(task.info)}
+    else:
+        response = {"state": task.state, "status": "En cours..."}
+    return jsonify(response)
 
 def write_data(imgdata, geo_pose_request):
     """
@@ -283,4 +317,21 @@ def write_data(imgdata, geo_pose_request):
 
             
 if __name__ == '__main__':
+    parser = ArgumentParser()
+    parser.add_argument(
+        '--output_path', '-output_path',
+        type=str,
+        required=True,
+        default='/output',
+        help='Specify the output path for the results. Default is "/output".'
+    )
+    parser.add_argument(
+        '--dataset', '-dataset',
+        type=str,
+        required=False,
+        default='LIN',
+        help='Specify the dataset to use between {CAB, LIN, HGE}. Default is "LIN".'
+    )
+
+    args = parser.parse_args()
     app.run(host='0.0.0.0', port=5000, debug=True)
