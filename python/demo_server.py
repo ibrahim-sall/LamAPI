@@ -122,8 +122,7 @@ def localize():
     geoPose.quaternion.y = last_line[4]
     geoPose.quaternion.z = last_line[5]
     geoPose.quaternion.w = last_line[2]
-    ###Convertt to WGS84
-  
+
     geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(np.array([float(last_line[6]), float(last_line[7]), float(last_line[8])]))
 
     geoPoseResponse = GeoPoseResponse(id = geoPoseRequest.id, timestamp = geoPoseRequest.timestamp)
@@ -140,17 +139,62 @@ def localize():
     return response
 
 @shared_task(name='server_func.run_docker_task')
-def run_docker_task(docker_run, cmd):
+def run_docker_task(docker_run, cmd, imgdata=None, geo_pose_request_json=None):
     """
-    Celery task to execute the Docker command.
+    Celery task to execute the Docker command, replicating the behavior of `localize`.
     """
     try:
+        geoPoseRequest = GeoPoseRequest.fromJson(geo_pose_request_json) if geo_pose_request_json else None
+
+        if geoPoseRequest:
+            if len(geoPoseRequest.sensorReadings.cameraReadings) < 1:
+                raise ValueError('Request has no camera readings')
+            if geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes is None:
+                raise ValueError('Request has no image')
+
+            imgdata = base64.b64decode(geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes)
+
+            print("Starting to write data...")
+            write_data(imgdata, geoPoseRequest)
+            print("Data writing completed successfully.")
+
         print(f"Running Docker container with command: {' '.join(cmd)}")
         run(docker_run, cmd)
-        return {"status": "success", "message": "Docker command executed successfully."}
+
+        if geoPoseRequest:
+            poses_path = f"/output/{args.dataset}/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
+            if not os.path.exists(poses_path):
+                raise FileNotFoundError("The file './poses.txt' does not exist.")
+            with open(poses_path, "r") as f:
+                f.seek(0, 2)
+                while f.tell() > 0:
+                    f.seek(f.tell() - 2, 0)
+                    char = f.read(1)
+                    if char == '\n':
+                        break
+                last_line = f.readline().strip().split(',')
+
+            geoPose = GeoPose()
+            geoPose.quaternion.x = last_line[3]
+            geoPose.quaternion.y = last_line[4]
+            geoPose.quaternion.z = last_line[5]
+            geoPose.quaternion.w = last_line[2]
+            geoPose.position.lat, geoPose.position.lon, geoPose.position.h = convert_to_wgs84(
+                np.array([float(last_line[6]), float(last_line[7]), float(last_line[8])])
+            )
+
+            geoPoseResponse = GeoPoseResponse(id=geoPoseRequest.id, timestamp=geoPoseRequest.timestamp)
+            geoPoseResponse.geopose = geoPose
+
+            print("Response:")
+            print(geoPoseResponse.toJson())
+
+            return geoPoseResponse.toJson()
+        else:
+            return {"status": "success", "message": "Docker command executed successfully."}
     except Exception as e:
-        print(f"Error during Docker execution: {e}")
-        return {"status": "failure", "message": str(e)}
+        print(f"Error during task execution: {e}")
+        return {"error": str(e)}
 
 @app.route('/run-bash', methods=['POST'])
 def run_bash():
@@ -161,13 +205,16 @@ def run_bash():
         docker_run, cmd = command(
             data_dir=os.getenv("DATA_DIR"),
             output_dir=args.output_path,
-            query_id=request.json.get('query_id'),
+            query_id=request.json.get('query_id', 'query_default'),
             scene=args.dataset
         )
         print(f"Docker run command: {docker_run}")
         print(f"Command to execute: {cmd}")
 
-        task = run_docker_task.apply_async(args=[docker_run, cmd])
+        imgdata = request.json.get('imgdata')
+        geo_pose_request = request.json.get('geo_pose_request')
+
+        task = run_docker_task.apply_async(args=[docker_run, cmd, imgdata, geo_pose_request])
         return jsonify({"task_id": task.id}), 202
     except Exception as e:
         print(f"Error preparing Docker command: {e}")
