@@ -13,7 +13,7 @@ def command(data_dir, output_dir, scene, ref_id="map", query_id="query_phone",
         "python3", "-m", "lamar.run",
         "--scene", scene,
         "--ref_id", ref_id,
-        "--query_id", query_id,
+        "--query_id", "query_phone",
         "--retrieval", retrieval,
         "--feature", feature,
         "--matcher", matcher,
@@ -37,7 +37,7 @@ def run(docker_run: str, command: list):
             command=full_command,
             detach=True,
             volumes={
-                "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "rw"},
+                "/mnt/lamas": {"bind": "/mnt/lamas", "mode": "z"},
                 "output_volume": {"bind": "/output", "mode": "rw"}
             },
             runtime="nvidia",
