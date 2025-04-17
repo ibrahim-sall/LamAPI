@@ -20,7 +20,6 @@ function displayFolderPath() {
 }
 
 let leafletMap = null;
-
 function submitAll() {
     const imageInput = document.getElementById('imageInput');
     const folderInput = document.getElementById('folderInput');
@@ -63,6 +62,7 @@ function submitAll() {
         statusMessage.innerText = "Erreur lors de l'envoi des fichiers.";
     });
 }
+
 function pollTaskStatus(taskId) {
     const statusMessage = document.getElementById('statusMessage');
     const progress = document.getElementById('progress');
@@ -75,14 +75,6 @@ function pollTaskStatus(taskId) {
                 if (data.state === 'PENDING') {
                     statusMessage.innerText = "Traitement en attente...";
                     progressValue = Math.min(progressValue + 10, 95);
-                    if (progressValue === 95) {
-                        clearInterval(interval);
-                        setTimeout(() => {
-                            progressValue = 100;
-                            progress.style.width = `${progressValue}%`;
-                            statusMessage.innerText = "Traitement presque terminé...";
-                        }, 180000);
-                    }
                 } else if (data.state === 'SUCCESS') {
                     clearInterval(interval);
                     statusMessage.innerText = "Traitement terminé avec succès.";
@@ -97,7 +89,6 @@ function pollTaskStatus(taskId) {
                     statusMessage.innerText = `Statut : ${data.state}`;
                 }
 
-            
                 progress.style.width = `${progressValue}%`;
             })
             .catch(error => {
