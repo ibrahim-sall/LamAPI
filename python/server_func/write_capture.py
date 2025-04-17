@@ -1,168 +1,5 @@
-# Open AR Cloud GeoPoseProtocol - Python implementation
-# Created by Gabor Soros, 2023
-#
-# Copyright 2023 Nokia
-# Licensed under the MIT License
-# SPDX-License-Identifier: MIT
-
-
-from flask import Flask, request, jsonify, make_response, abort, render_template
-from argparse import ArgumentParser
-from georeference.georef import convert_to_wgs84 
-from flask_swagger_ui import get_swaggerui_blueprint
-from oscp.geoposeprotocol import *
-import numpy as np
-
-from server_func.demo_docker import *
+import os 
 from server_func.to_capture import *
-# from server_func.write_capture import *
-from server_func.celery_worker import celery
-from celery import shared_task
-from celery.result import AsyncResult
-
-
-app = Flask(__name__)
-
-upload_folder = configure_upload_folder()
-
-@app.route('/')
-def home():
-    return render_template('index.html')
-
-##############################################
-
-@app.route('/process', methods=['POST'])
-def process():
-    if 'image' not in request.files or 'files' not in request.files:
-        return jsonify({'error': 'Image ou fichiers du dossier manquants'}), 400
-
-    image_file = request.files['image']
-    folder_files = request.files.getlist('files')
-
-    try:
-        image_path = save_uploaded_image(image_file, upload_folder)
-        selected_folder = save_uploaded_folder(folder_files)
-        output = run_geopose_processing(image_path, selected_folder)
-        return jsonify(output)
-
-    except ValueError as ve:
-        return jsonify({'error': str(ve)}), 400
-    except RuntimeError as re:
-        return jsonify({'error': str(re)}), 500
-    except Exception as e:
-        return jsonify({'error': 'Erreur inattendue', 'message': str(e)}), 500
-
-##############################################
-    
-# Swagger UI route
-SWAGGER_URL = '/swagger'
-API_URL = '/static/swagger.json'
-swaggerui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL,
-    API_URL,
-    config={
-        'app_name': "LamAPI",
-        'additionalQueryStringParams': {
-            'config': '.',  
-            'output': 'path/volume_output'  
-        }
-    }
-)
-app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
-
-##################################################
-
-@app.route('/geopose', methods=['GET'])
-def status():
-    return make_response("{\"status\": \"running\"}", 200)
-
-@app.route('/geopose', methods=['POST'])
-def localize():
-    jdata = request.get_json()
-
-    task = process_geopose_task.apply_async(args=[jdata])
-
-    return jsonify({"task_id": task.id}), 202
-
-@shared_task(name='process_geopose_task')
-def process_geopose_task(jdata):
-    geoPoseRequest = GeoPoseRequest.fromJson(jdata)
-
-    if len(geoPoseRequest.sensorReadings.cameraReadings) < 1:
-        raise ValueError('Request has no camera readings')
-    if geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes is None:
-        raise ValueError('Request has no image')
-
-    imgdata = base64.b64decode(geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes)
-
-    # Write data
-    write_data(imgdata, geoPoseRequest)
-
-    # Run Docker command
-    docker_run, cmd = command(
-        data_dir=os.getenv("DATA_DIR"),
-        output_dir=os.getenv("OUTPUT_DIR"),
-        query_id=f"query_{geoPoseRequest.id}",
-        scene=os.getenv("SCENE")
-    )
-    run(docker_run, cmd)
-
-    # Process the result
-    scene = os.getenv("SCENE")
-    poses_path = f"/output/{scene}/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
-
-    if not os.path.exists(poses_path):
-        raise FileNotFoundError("The file './poses.txt' does not exist.")
-
-    with open(poses_path, "r") as f:
-        f.seek(0, 2)
-        while f.tell() > 0:
-            f.seek(f.tell() - 2, 0)
-            char = f.read(1)
-            if char == '\n':
-                break
-        last_line = f.readline().strip().split(',')
-
-    geoPose = GeoPose()
-    geoPose.quaternion.x = last_line[3]
-    geoPose.quaternion.y = last_line[4]
-    geoPose.quaternion.z = last_line[5]
-    geoPose.quaternion.w = last_line[2]
-    geoPose.position.lat, geoPose.position.lon, geoPose.position.h = convert_to_wgs84(
-        np.array([float(last_line[6]), float(last_line[7]), float(last_line[8])])
-    )
-
-    geoPoseResponse = GeoPoseResponse(id=geoPoseRequest.id, timestamp=geoPoseRequest.timestamp)
-    geoPoseResponse.geopose = geoPose
-
-    return geoPoseResponse.toJson()
-
-@app.route('/geopose/status/<task_id>', methods=['GET'])
-def get_task_status(task_id):
-    task = AsyncResult(task_id)
-
-    if task.state == 'PENDING':
-        response = {
-            'state': task.state,
-            'status': 'Pending...'
-        }
-    elif task.state == 'SUCCESS':
-        response = {
-            'state': task.state,
-            'result': task.result
-        }
-    elif task.state == 'FAILURE':
-        response = {
-            'state': task.state,
-            'error': str(task.info) 
-        }
-    else:
-        response = {
-            'state': task.state,
-            'status': str(task.info)
-        }
-
-    return jsonify(response)
 
 def write_data(imgdata, geo_pose_request):
     """
@@ -176,8 +13,8 @@ def write_data(imgdata, geo_pose_request):
     justId = geo_pose_request.sensorReadings.cameraReadings[0].sensorId.split("/")[0]
 
     try:
-        data_dir, scene = os.getenv("DATA_DIR"), os.getenv("SCENE")
-        output_dir = f"{data_dir}/{scene}/sessions/query_{geo_pose_request.id}"
+        data_dir = os.getenv("DATA_DIR")
+        output_dir = f"{data_dir}/{args.dataset}/sessions/query_{geo_pose_request.id}"
         proc_dir = f"{output_dir}/proc"
         raw_dir = f"{output_dir}/raw_data/{justId}/images"
         os.makedirs(output_dir, exist_ok=True)
@@ -286,6 +123,3 @@ def write_data(imgdata, geo_pose_request):
                     sensor_file.write(bt_line)
 
         return f"query_{geo_pose_request.id}"
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
