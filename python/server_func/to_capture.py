@@ -60,7 +60,7 @@ def run_geopose_processing(image_path, folder_path):
 
     if result.returncode != 0:
         raise RuntimeError(f"La commande a échoué:\n{result.stderr.strip()}")
-
+    print(result.stdout.strip())
     return parse_output_json(result.stdout)
 
 def parse_output_json(stdout_text):

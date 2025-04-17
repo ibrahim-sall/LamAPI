@@ -34,28 +34,51 @@ def home():
 
 @app.route('/process', methods=['POST'])
 def process():
+    app.logger.info("Processing request started.")
+
     if 'image' not in request.files or 'files' not in request.files:
+        app.logger.error("Missing 'image' or 'files' in request.")
         return jsonify({'error': 'Image ou fichiers du dossier manquants'}), 400
 
     image_file = request.files['image']
     folder_files = request.files.getlist('files')
 
     if not image_file or len(folder_files) == 0:
+        app.logger.error("Image file or folder files are empty.")
         return jsonify({'error': 'Image ou fichiers du dossier manquants'}), 400
 
     try:
+        app.logger.info("Saving uploaded image.")
         image_path = save_uploaded_image(image_file, upload_folder)
+        app.logger.info(f"Image saved at: {image_path}")
+
+        app.logger.info("Saving uploaded folder files.")
         selected_folder = save_uploaded_folder(folder_files)
+        app.logger.info(f"Folder files saved at: {selected_folder}")
+
+        app.logger.info("Running GeoPose processing.")
         output = run_geopose_processing(image_path, selected_folder)
-        print(f"Output: {output}")
+
+        if not isinstance(output, dict):
+            raise ValueError("Invalid output from GeoPose processing. Expected a dictionary.")
+
+        app.logger.info(f"GeoPose processing output: {output}")
     except Exception as e:
+        app.logger.error(f"Error during image or folder processing: {e}")
         return jsonify({'error': 'Erreur lors du traitement de l\'image ou des fichiers', 'message': str(e)}), 500
-    try: 
+
+    try:
+        app.logger.info("Sending POST request to /geopose endpoint.")
         response = requests.post('http://127.0.0.1:5000/geopose', json=output)
 
-        return jsonify(response.json()), response.status_code
+        if response.status_code != 202:
+            app.logger.error(f"Error from /geopose endpoint: {response.status_code}, {response.text}")
+            return jsonify({'error': 'Erreur lors de la requête à /geopose', 'message': response.text}), response.status_code
 
+        app.logger.info(f"Response from /geopose: {response.status_code}, {response.json()}")
+        return jsonify(response.json()), response.status_code
     except Exception as e:
+        app.logger.error(f"Unexpected error during /geopose request: {e}")
         return jsonify({'error': 'Erreur inattendue', 'message': str(e)}), 500
 
 ##############################################
@@ -118,8 +141,8 @@ def process_geopose_task(jdata):
     except Exception as e:
         print(f"Error during Docker command execution: {e}")
         raise
-
-    poses_path = f"/output/{args.dataset}/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
+    scene = os.getenv("SCENE")
+    poses_path = f"/output/{scene}/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
 
     if not os.path.exists(poses_path ):
         return make_response(jsonify({"error": "The file './poses.txt' does not exist."}), 500)
