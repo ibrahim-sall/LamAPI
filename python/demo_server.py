@@ -70,13 +70,17 @@ def process():
     try:
         app.logger.info("Sending POST request to /geopose endpoint.")
         response = requests.post('http://127.0.0.1:5000/geopose', json=output)
-
+        app.logger.info(f"Response from /geopose: {response.status_code}, {response.text}")
         if response.status_code != 202:
             app.logger.error(f"Error from /geopose endpoint: {response.status_code}, {response.text}")
             return jsonify({'error': 'Erreur lors de la requête à /geopose', 'message': response.text}), response.status_code
 
         app.logger.info(f"Response from /geopose: {response.status_code}, {response.json()}")
-        return jsonify(response.json()), response.status_code
+        response_data = response.json()
+        if "task_id" not in response_data:
+            app.logger.error("Task ID is missing in the response.")
+            return jsonify({'error': 'Erreur : Impossible de récupérer l\'ID de la tâche.'}), 500
+        return jsonify(response_data), response.status_code
     except Exception as e:
         app.logger.error(f"Unexpected error during /geopose request: {e}")
         return jsonify({'error': 'Erreur inattendue', 'message': str(e)}), 500
