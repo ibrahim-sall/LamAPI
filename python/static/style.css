@@ -196,3 +196,23 @@ button:hover {
 .streetview-link-container a:hover {
     background-color: #27642a;
 }
+
+.status {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.progress-bar {
+    width: 100%;
+    background-color: #f3f3f3;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress {
+    height: 20px;
+    width: 0%;
+    background-color: #3498db;
+    transition: width 0.5s ease;
+}

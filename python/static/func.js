@@ -33,7 +33,6 @@ function submitAll() {
         return;
     }
 
-
     const formData = new FormData();
     formData.append("image", imageFile);
 
@@ -41,15 +40,72 @@ function submitAll() {
         formData.append('files', folderFiles[i], folderFiles[i].webkitRelativePath);
     }
 
+    const statusMessage = document.getElementById('statusMessage');
+    const progressBar = document.getElementById('progressBar');
+    statusMessage.innerText = "Envoi des fichiers au serveur...";
+    progressBar.style.display = 'block';
+
     fetch("/process", {
         method: "POST",
         body: formData
     })
-    .then(handleStatus)
-    .then(processData)
+    .then(response => response.json())
+    .then(data => {
+        if (data.task_id) {
+            statusMessage.innerText = "Traitement en cours...";
+            pollTaskStatus(data.task_id);
+        } else {
+            statusMessage.innerText = "Erreur : Impossible de récupérer l'ID de la tâche.";
+        }
+    })
     .catch(error => {
         console.error('Erreur de traitement:', error);
+        statusMessage.innerText = "Erreur lors de l'envoi des fichiers.";
     });
+}
+function pollTaskStatus(taskId) {
+    const statusMessage = document.getElementById('statusMessage');
+    const progress = document.getElementById('progress');
+
+    let progressValue = 0;
+    const interval = setInterval(() => {
+        fetch(`/geopose/status/${taskId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.state === 'PENDING') {
+                    statusMessage.innerText = "Traitement en attente...";
+                    progressValue = Math.min(progressValue + 10, 95);
+                    if (progressValue === 95) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            progressValue = 100;
+                            progress.style.width = `${progressValue}%`;
+                            statusMessage.innerText = "Traitement presque terminé...";
+                        }, 180000);
+                    }
+                } else if (data.state === 'SUCCESS') {
+                    clearInterval(interval);
+                    statusMessage.innerText = "Traitement terminé avec succès.";
+                    progressValue = 100;
+                    processData(data.result);
+                } else if (data.state === 'FAILURE') {
+                    clearInterval(interval);
+                    statusMessage.innerText = "Échec du traitement.";
+                    progressValue = 100;
+                    console.error("Erreur:", data.error);
+                } else {
+                    statusMessage.innerText = `Statut : ${data.state}`;
+                }
+
+            
+                progress.style.width = `${progressValue}%`;
+            })
+            .catch(error => {
+                clearInterval(interval);
+                console.error("Erreur lors du polling:", error);
+                statusMessage.innerText = "Erreur lors de la récupération du statut.";
+            });
+    }, 2000);
 }
 
 function handleStatus(response) {

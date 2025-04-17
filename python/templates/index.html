@@ -40,7 +40,12 @@
 
         <button onclick="submitAll()">Lancer le traitement</button>
 
-        <div id="status" class="status"></div>
+        <div id="status" class="status">
+            <p id="statusMessage">En attente de l'action utilisateur...</p>
+            <div id="progressBar" class="progress-bar" style="display: none;">
+                <div id="progress" class="progress"></div>
+            </div>
+        </div>
         <div id="output" class="output"></div>
 
         <div id="map" class="map-container"></div>
