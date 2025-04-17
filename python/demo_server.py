@@ -161,10 +161,10 @@ def run_docker_task(docker_run, cmd, imgdata=None, geo_pose_request_json=None):
         print(f"Running Docker container with command: {' '.join(cmd)}")
         run(docker_run, cmd)
 
-        if geoPoseRequest:
-            poses_path = f"/output/{args.dataset}/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
-            if not os.path.exists(poses_path):
-                raise FileNotFoundError("The file './poses.txt' does not exist.")
+        
+
+        poses_path = f"/output/LIN/pose_estimation/query_phone/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
+        if os.path.exists(poses_path):
             with open(poses_path, "r") as f:
                 f.seek(0, 2)
                 while f.tell() > 0:
@@ -183,7 +183,7 @@ def run_docker_task(docker_run, cmd, imgdata=None, geo_pose_request_json=None):
                 np.array([float(last_line[6]), float(last_line[7]), float(last_line[8])])
             )
 
-            geoPoseResponse = GeoPoseResponse(id=geoPoseRequest.id, timestamp=geoPoseRequest.timestamp)
+            geoPoseResponse = GeoPoseResponse(id="query_default", timestamp=None)
             geoPoseResponse.geopose = geoPose
 
             print("Response:")
@@ -191,7 +191,7 @@ def run_docker_task(docker_run, cmd, imgdata=None, geo_pose_request_json=None):
 
             return geoPoseResponse.toJson()
         else:
-            return {"status": "success", "message": "Docker command executed successfully."}
+            return {"status": "success", "message": "Docker command executed successfully, but no GeoPose data found."}
     except Exception as e:
         print(f"Error during task execution: {e}")
         return {"error": str(e)}
@@ -201,11 +201,12 @@ def run_bash():
     """
     Route to trigger the Docker execution via Celery.
     """
+    
     try:
         docker_run, cmd = command(
             data_dir=os.getenv("DATA_DIR"),
             output_dir=args.output_path,
-            query_id=request.json.get('query_id', 'query_default'),
+            query_id="query_phone", #request.json.get('query_id', 'query_default'),
             scene=args.dataset
         )
         print(f"Docker run command: {docker_run}")
