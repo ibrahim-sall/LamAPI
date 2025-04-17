@@ -39,6 +39,9 @@ def process():
     image_file = request.files['image']
     folder_files = request.files.getlist('files')
 
+    if not image_file or len(folder_files) == 0:
+        return jsonify({'error': 'Image ou fichiers du dossier manquants'}), 400
+
     try:
         image_path = save_uploaded_image(image_file, upload_folder)
         selected_folder = save_uploaded_folder(folder_files)
@@ -51,7 +54,6 @@ def process():
         return jsonify({'error': str(re)}), 500
     except Exception as e:
         return jsonify({'error': 'Erreur inattendue', 'message': str(e)}), 500
-
 ##############################################
     
 # Swagger UI route
