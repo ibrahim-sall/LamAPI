@@ -15,25 +15,9 @@ import numpy as np
 
 from server_func.demo_docker import *
 from server_func.to_capture import *
+from server_func.celery_worker import celery
+from celery import shared_task
 
-
-parser = ArgumentParser()
-parser.add_argument(
-    '--output_path', '-output_path',
-    type=str,
-    required=True,
-    default='/output',
-    help='Specify the output path for the results. Default is "/output".'
-)
-parser.add_argument(
-    '--dataset', '-dataset',
-    type=str,
-    required=False,
-    default='LIN',
-    help='Specify the dataset to use between {CAB, LIN, HGE}. Default is "LIN".'
-)
-
-args = parser.parse_args()
 
 app = Flask(__name__)
 
