@@ -12,6 +12,7 @@ from georeference.georef import convert_to_wgs84
 from flask_swagger_ui import get_swaggerui_blueprint
 from oscp.geoposeprotocol import *
 import numpy as np
+import requests
 
 from server_func.demo_docker import *
 from server_func.to_capture import *
@@ -43,17 +44,19 @@ def process():
         return jsonify({'error': 'Image ou fichiers du dossier manquants'}), 400
 
     try:
+
         image_path = save_uploaded_image(image_file, upload_folder)
         selected_folder = save_uploaded_folder(folder_files)
-        output = run_geopose_processing(image_path, selected_folder)
-        return jsonify(output)
+        response = requests.post('http://127.0.0.1:5000/geopose', json={
+            "image_path": image_path,
+            "folder_path": selected_folder
+        })
 
-    except ValueError as ve:
-        return jsonify({'error': str(ve)}), 400
-    except RuntimeError as re:
-        return jsonify({'error': str(re)}), 500
+        return jsonify(response.json()), response.status_code
+
     except Exception as e:
         return jsonify({'error': 'Erreur inattendue', 'message': str(e)}), 500
+
 ##############################################
     
 # Swagger UI route
@@ -88,35 +91,38 @@ def localize():
 
 @shared_task(name='process_geopose_task')
 def process_geopose_task(jdata):
+    jdata = request.get_json()
     geoPoseRequest = GeoPoseRequest.fromJson(jdata)
 
     if len(geoPoseRequest.sensorReadings.cameraReadings) < 1:
-        raise ValueError('Request has no camera readings')
+        abort(400, description='request has no camera readings')
     if geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes is None:
-        raise ValueError('Request has no image')
-
+        abort(400, description='request has no image')
     imgdata = base64.b64decode(geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes)
 
-    # Write data
-    write_data(imgdata, geoPoseRequest)
+    try:
+        print("Starting to write data...")
+        write_data(imgdata, geoPoseRequest)
+        print("Data writing completed successfully.")
+    except Exception as e:
+        print(f"Error during data writing: {e}")
+        raise
 
-    # Run Docker command
-    docker_run, cmd = command(
-        data_dir=os.getenv("DATA_DIR"),
-        output_dir=os.getenv("OUTPUT_DIR"),
-        query_id=f"query_{geoPoseRequest.id}",
-        scene=os.getenv("SCENE")
-    )
-    run(docker_run, cmd)
+    try:
+        print("Preparing to run Docker command...")
+        docker_run, cmd = command(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path, query_id=f"query_{geoPoseRequest.id}", scene=args.dataset)
+        print(f"Docker run command: {docker_run}")
+        print(f"Command to execute: {cmd}")
+        run(docker_run, cmd)
+    except Exception as e:
+        print(f"Error during Docker command execution: {e}")
+        raise
 
-    # Process the result
-    scene = os.getenv("SCENE")
-    poses_path = f"/output/{scene}/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
+    poses_path = f"/output/{args.dataset}/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
 
-    if not os.path.exists(poses_path):
-        raise FileNotFoundError("The file './poses.txt' does not exist.")
-
-    with open(poses_path, "r") as f:
+    if not os.path.exists(poses_path ):
+        return make_response(jsonify({"error": "The file './poses.txt' does not exist."}), 500)
+    with open(poses_path , "r") as f:
         f.seek(0, 2)
         while f.tell() > 0:
             f.seek(f.tell() - 2, 0)
@@ -130,14 +136,22 @@ def process_geopose_task(jdata):
     geoPose.quaternion.y = last_line[4]
     geoPose.quaternion.z = last_line[5]
     geoPose.quaternion.w = last_line[2]
-    geoPose.position.lat, geoPose.position.lon, geoPose.position.h = convert_to_wgs84(
-        np.array([float(last_line[6]), float(last_line[7]), float(last_line[8])])
-    )
+    ###Convertt to WGS84
+  
+    geoPose.position.lat, geoPose.position.lon,  geoPose.position.h  = convert_to_wgs84(np.array([float(last_line[6]), float(last_line[7]), float(last_line[8])]))
 
-    geoPoseResponse = GeoPoseResponse(id=geoPoseRequest.id, timestamp=geoPoseRequest.timestamp)
+    geoPoseResponse = GeoPoseResponse(id = geoPoseRequest.id, timestamp = geoPoseRequest.timestamp)
     geoPoseResponse.geopose = geoPose
 
-    return geoPoseResponse.toJson()
+    print("Response:")
+    print(geoPoseResponse.toJson())
+
+    try:
+        response = make_response(geoPoseResponse.toJson(), 200)
+    except Exception as e:
+        print(f"Error writing data: {e}")
+        response = make_response(jsonify({"error": "Failed to write data"}), 500)
+    return response
 
 @app.route('/geopose/status/<task_id>', methods=['GET'])
 def get_task_status(task_id):
