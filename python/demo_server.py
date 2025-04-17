@@ -44,13 +44,14 @@ def process():
         return jsonify({'error': 'Image ou fichiers du dossier manquants'}), 400
 
     try:
-
         image_path = save_uploaded_image(image_file, upload_folder)
         selected_folder = save_uploaded_folder(folder_files)
-        response = requests.post('http://127.0.0.1:5000/geopose', json={
-            "image_path": image_path,
-            "folder_path": selected_folder
-        })
+        output = run_geopose_processing(image_path, selected_folder)
+        print(f"Output: {output}")
+    except Exception as e:
+        return jsonify({'error': 'Erreur lors du traitement de l\'image ou des fichiers', 'message': str(e)}), 500
+    try: 
+        response = requests.post('http://127.0.0.1:5000/geopose', json=output)
 
         return jsonify(response.json()), response.status_code
 
@@ -91,7 +92,6 @@ def localize():
 
 @shared_task(name='process_geopose_task')
 def process_geopose_task(jdata):
-    jdata = request.get_json()
     geoPoseRequest = GeoPoseRequest.fromJson(jdata)
 
     if len(geoPoseRequest.sensorReadings.cameraReadings) < 1:
@@ -110,7 +110,8 @@ def process_geopose_task(jdata):
 
     try:
         print("Preparing to run Docker command...")
-        docker_run, cmd = command(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path, query_id=f"query_{geoPoseRequest.id}", scene=args.dataset)
+
+        docker_run, cmd = command(data_dir=os.getenv("DATA_DIR"), output_dir=os.getenv("OUTPUT_DIR"), query_id=f"query_{geoPoseRequest.id}", scene=os.getenv("SCENE"))
         print(f"Docker run command: {docker_run}")
         print(f"Command to execute: {cmd}")
         run(docker_run, cmd)
