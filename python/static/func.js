@@ -1,3 +1,4 @@
+// Affichage de l'image
 function displayImage(event) {
     const preview = document.getElementById('preview');
     const [image] = event.target.files;
@@ -7,6 +8,7 @@ function displayImage(event) {
     }
 }
 
+// Affichage du nom de dossier
 function displayFolderPath() {
     const input = document.getElementById('folderInput');
     const files = input.files;
@@ -21,6 +23,7 @@ function displayFolderPath() {
 
 let leafletMap = null;
 
+// Lancer le traitement
 function submitAll() {
     const imageInput = document.getElementById('imageInput');
     const folderInput = document.getElementById('folderInput');
@@ -32,7 +35,6 @@ function submitAll() {
         alert("Veuillez importer une image et un dossier.");
         return;
     }
-
 
     const formData = new FormData();
     formData.append("image", imageFile);
@@ -52,6 +54,7 @@ function submitAll() {
     });
 }
 
+// Affichage du statut de la réponse
 function handleStatus(response) {
     const statusDiv = document.getElementById('status');
     statusDiv.innerHTML = `<strong>Status Code:</strong> ${response.status}`;
@@ -74,6 +77,7 @@ function updateStatusStyle(element, backgroundColor, color) {
     element.style.color = color;
 }
 
+// Affichage du résultat en fonction de la réussite de la réponse
 function processData(data) {
     const outputDiv = document.getElementById('output');
 
@@ -99,6 +103,7 @@ function processData(data) {
     }
 }
 
+// Affichage de la carte et du bouton Street View
 function displayMapAndStreetView(position) {
     const { lat, lon } = position;
 

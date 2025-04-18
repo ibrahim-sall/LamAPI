@@ -39,6 +39,8 @@ parser.add_argument(
     type=str,
     default=get_base_url()
 )
+
+# Fichier txt
 parser.add_argument(
     '--image', '-image',
     type=str,
@@ -75,6 +77,7 @@ parser.add_argument(
     required = True,
     default = None
 )
+
 parser.add_argument(
     '--output', '-output',
     type=str,
@@ -90,9 +93,13 @@ def check_file(path, name):
         return False
     return True
 
+
+# Extraction des données en GeoPoseRequest
+
 geoPoseRequest = GeoPoseRequest()
 geoPoseRequest.timestamp = int(datetime.now(timezone.utc).timestamp()*1000)
 
+# Ecriture de l'image
 if not check_file(args.image, "image"):
     sys.exit(1)
 else :   
@@ -104,6 +111,7 @@ else :
     # open it again with PIL just to find out its size
     image = Image.open(args.image)
 
+# Ecriture d'une id par défaut
 seconds = geoPoseRequest.timestamp // 1000
 millis = geoPoseRequest.timestamp % 1000
 dt = datetime.utcfromtimestamp(seconds)
@@ -113,6 +121,8 @@ kCameraSensorId = (
     f"_{millis:03d}" +
     "/cam_phone_" + str(geoPoseRequest.timestamp)
 ) # default value
+
+# Extraction des données de images.txt
 if  check_file(args.imagestxt, "imagestxt"):
     with open(args.imagestxt, 'r') as f:
         lines = f.read().splitlines()[1:]  # skip header
@@ -132,6 +142,7 @@ if  check_file(args.imagestxt, "imagestxt"):
     cameraReading.imageOrientation = ImageOrientation()
 
 else :
+    # Informations de base à fournir si les données n'existent pas
     cameraReading = CameraReading(sensorId=kCameraSensorId)
     cameraReading.timestamp = geoPoseRequest.timestamp
     cameraReading.imageFormat = ImageFormat.RGBA32
@@ -140,6 +151,7 @@ else :
     cameraReading.sequenceNumber = 1
     cameraReading.imageOrientation = ImageOrientation()
 
+# Extraction des données de sensors.txt
 if check_file(args.sensors, "sensors"):
     with open(args.sensors, 'r') as f:
         lines = f.read().splitlines()[1:]
@@ -160,6 +172,7 @@ else :
     geoPoseRequest.sensors.append(Sensor(type = SensorType.CAMERA, id=kCameraSensorId))
     geoPoseRequest.sensorReadings.cameraReadings.append(cameraReading)
 
+# Extraction des données de bt.txt
 if check_file(args.bt, "bt"):
     with open(args.bt, 'r') as f:
         lines = f.read().splitlines()[1:]
@@ -178,6 +191,7 @@ if check_file(args.bt, "bt"):
     geoPoseRequest.sensors.append(Sensor(type = SensorType.BLUETOOTH, id=kBluetoothSensorId))
     geoPoseRequest.sensorReadings.bluetoothReadings.append(bluetoothReading)
 
+# Extraction des données de wifi.txt
 if check_file(args.wifi, "wifi"):
     with open(args.wifi, 'r') as f:
         lines = f.read().splitlines()[1:]
@@ -199,6 +213,7 @@ if check_file(args.wifi, "wifi"):
     geoPoseRequest.sensors.append(Sensor(type = SensorType.WIFI, id=kWifiSensorId))
     geoPoseRequest.sensorReadings.wifiReadings.append(wifiReading)
 
+# Extraction des données de trajectories.txt (non utilisé pour l'instant)
 if check_file(args.trajectories, "trajectories"):
     with open(args.trajectories, 'r') as f:
         lines = f.read().splitlines()[1:]
@@ -208,15 +223,14 @@ if check_file(args.trajectories, "trajectories"):
     # print("Trajectories config:")
     # print(trajectories_config)
 
-def write_output(geoposeresponse):
 
+def write_output(geoposeresponse):
     if (args.output):
         file_path=args.output+"/output.json"
         # print(args.output)
         with open(file_path,"w") as f:
             f.write(geoposeresponse.toJson())
             f.close()
-
 
 try:
     headers = {"Content-Type":"application/json"}
@@ -227,6 +241,8 @@ try:
     # print("Request (without image):"
     # print()
 
+
+    # Envoie de la requête au serveur
     response = requests.post(args.url, headers=headers, data=body)
     # print(f'Status: {response.status_code}')
     jdata = response.json()

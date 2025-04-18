@@ -39,12 +39,14 @@ app = Flask(__name__)
 
 upload_folder = configure_upload_folder()
 
+# Route de base
 @app.route('/')
 def home():
     return render_template('index.html')
 
 ##############################################
 
+# Route de sauvegarde des données
 @app.route('/process', methods=['POST'])
 def process():
     if 'image' not in request.files or 'files' not in request.files:
@@ -54,8 +56,11 @@ def process():
     folder_files = request.files.getlist('files')
 
     try:
+        # Sauvegarder les données côté serveur
         image_path = save_uploaded_image(image_file, upload_folder)
         selected_folder = save_uploaded_folder(folder_files)
+
+        # Lancer les traitements
         output = run_geopose_processing(image_path, selected_folder)
         return jsonify(output)
 
@@ -90,6 +95,7 @@ app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 def status():
     return make_response("{\"status\": \"running\"}", 200)
 
+# Route de traitement
 @app.route('/geopose', methods=['POST'])
 def localize():
 
@@ -103,6 +109,7 @@ def localize():
     imgdata = base64.b64decode(geoPoseRequest.sensorReadings.cameraReadings[0].imageBytes)
 
     try:
+        # Ecrire le format Capture
         print("Starting to write data...")
         write_data(imgdata, geoPoseRequest)
         print("Data writing completed successfully.")
@@ -111,6 +118,7 @@ def localize():
         raise
 
     try:
+        # Lancer le traitement LamAR
         print("Preparing to run Docker command...")
         docker_run, cmd = command(data_dir=os.getenv("DATA_DIR"), output_dir=args.output_path, query_id=f"query_{geoPoseRequest.id}", scene=args.dataset)
         print(f"Docker run command: {docker_run}")
@@ -120,6 +128,7 @@ def localize():
         print(f"Error during Docker command execution: {e}")
         raise
 
+    # Chemin vers poses.txt, là où est écrite la position relative de l'image
     poses_path = f"/output/{args.dataset}/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
 
     if not os.path.exists(poses_path ): # Vérification de l'existence du fichier
