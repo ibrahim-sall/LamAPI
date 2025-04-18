@@ -122,12 +122,12 @@ def localize():
 
     poses_path = f"/output/{args.dataset}/pose_estimation/query_{geoPoseRequest.id}/map/superpoint/superglue/fusion-netvlad-ap-gem-10/triangulation/single_image/poses.txt"
 
-    if not os.path.exists(poses_path ):
+    if not os.path.exists(poses_path ): # Vérification de l'existence du fichier
         return make_response(jsonify({"error": "The file './poses.txt' does not exist."}), 500)
-    with open(poses_path , "r") as f:
+    with open(poses_path , "r") as f: 
         f.seek(0, 2)
         while f.tell() > 0:
-            f.seek(f.tell() - 2, 0)
+            f.seek(f.tell() - 2, 0) # Cherche la dernière ligne du fichier
             char = f.read(1)
             if char == '\n':
                 break
