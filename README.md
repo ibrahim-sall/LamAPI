@@ -17,5 +17,5 @@ images.txt, wifi.txt, bt.txt and sensors.txt.
 ![Alt text](./images/web_data.png?raw=true "Image et data intégrée")
 
 Once the calculation is finished, the GeoPose is displayed and the position is shown on a Leaflet map.
-A button to access the location on Street Map.
+There is a button to access the location on Street Map.
 ![Alt text](./images/web_result.png?raw=true "Result")
