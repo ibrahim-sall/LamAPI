@@ -6,15 +6,16 @@ This repo contains our school's project aiming to build a Web service that compu
 We provide a docker subdirectory with the dockerfile from lamar-benchmark and a README ['How to set-up server?'](docker/DOCKER.md) to set-up the server from distant image (that's the better solution for installation stability).
 
 ## API-geopose
-In the first place you nedd to create a python environment:
-```sh
-conda create -n oscp_test
-conda activate oscp_test
-conda install -c anaconda requests
-conda install -c anaconda flask
-conda install -c anaconda pillow
-```
 
-You can now start the server: ``run-oscp-gpp-server.sh``. You can test whether the server is running by typing in your browser: http://localhost:8080/geopose.
+This is the visual when the user arrives on the site.
+It has the possibility to enter an image to geopose, and provide options files to improve processing.
+![Alt text](./images/web_vide.png?raw=true "Page home")
 
-And then start the client and execute a request ``run-oscp-gpp-client.sh``
+The image and name of the selected folder is displayed to allow the user to check their actions.
+File names must be:
+images.txt, wifi.txt, bt.txt and sensors.txt.
+![Alt text](./images/web_data.png?raw=true "Image et data intégrée")
+
+Once the calculation is finished, the GeoPose is displayed and the position is shown on a Leaflet map.
+There is a button to access the location on Street Map.
+![Alt text](./images/web_result.png?raw=true "Result")

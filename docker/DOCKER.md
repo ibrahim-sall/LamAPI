@@ -15,8 +15,6 @@ Téléchargez l'image Docker en utilisant l'ID ou le nom de l'image.
 docker pull ghcr.io/microsoft/lamar-benchmark/lamar:latest
 ```
 
-Remplacez `<docker_image_id>` par l'ID ou le nom de votre image Docker.
-
 ### 2. Créer le point de montage local
 
 Créez un répertoire local pour monter le partage SMB.
@@ -41,30 +39,22 @@ Assurez-vous que le partage est monté correctement.
 ls /mnt/lamas
 ```
 
-### 5. Définir les variables d'environnement
-
-Définissez les variables d'environnement nécessaires. Si possible dans ~/.bashrc (puis source pour le relancer).
-
-```sh
-export DATA_DIR=/mnt/lamas
-export DOCKER_IMAGE_ID=
-export DOCKER_RUN="docker run --runtime=nvidia --shm-size=26G --gpus all -v /mnt/lamas:/mnt/lamas -v output_volume:/output -e DATA_DIR=$DATA_DIR -e MPLCONFIGDIR=$DATA_DIR/matplotlib_config -e OUTPUT_DIR=/output $DOCKER_IMAGE_ID"
-```
-
-### 6. Monter le volume de sortie pour le docker
+### 5. Monter le volume de sortie pour le docker
 
 ```sh
 docker volume create output_volume 
 ```
 
-### 7. Exécuter la commande Docker
+### 6. Récupérer l'ID de l'image LaMAR
+
+Remplacer dans le docker-compose la valeur de la variable d'environnement _DOCKER_IMAGE_ID_
 
 ```sh
-$DOCKER_RUN python3 -m lamar.run --scene HGE --ref_id map --query_id query_phone --retrieval fusion --feature superpoint --matcher superglue --capture $DATA_DIR --outputs /output
+docker images --quiet ghcr.io/microsoft/lamar-benchmark/lamar:latest 
 ```
 
-# Adresse du serveur
-
+### 7. Lancer le serveur 
+C'est bon tout est maintenant en place pour faire tourner le serveur flask et ces dépendances. Placez vous à la racine du dépôt cloné et executez:
 ```sh
-ssh formation@172.31.58.183
+docker compose up --build
 ```
