@@ -6,139 +6,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lamar API</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
 </head>
 
 <body>
     <header>
-        <h1>Lamar API</h1>
+        <div class="header-content">
+            <img src="{{ url_for('static', filename='lama.png') }}" alt="Logo Lamar API" class="logo">
+            <h1>Lamar API</h1>
+        </div>
     </header>
+
     <main class="container">
         <section class="form-section">
             <h2>1. Sélectionner une image à GeoPoser</h2>
             <label for="imageInput" class="custom-label">Importer une image</label>
-            <input type="file" id="imageInput" accept="image/*" onchange="uploadImage()">
+            <input type="file" id="imageInput" accept="image/*" onchange="displayImage(event)" required>
             <p id="image"></p>
-            <img id="preview" src="" alt="Aperçu de l'image" class="preview-img">
+            <img id="preview" src="#" alt="Aperçu de l'image" class="preview-img" style="display:none;">
         </section>
-
 
         <section class="form-section">
             <h2>2. Sélectionner un dossier GeoPose</h2>
             <label for="folderInput" class="custom-label">Importer un dossier</label>
-            <input type="file" id="folderInput" onchange="uploadFolderPath()" webkitdirectory directory multiple>
+            <input type="file" id="folderInput" onchange="displayFolderPath()" webkitdirectory directory multiple>
             <p id="folderPath"></p>
         </section>
 
-        <button onclick="runCommand()">Lancer le traitement</button>
+        <button onclick="submitAll()">Lancer le traitement</button>
 
         <div id="status" class="status"></div>
         <div id="output" class="output"></div>
+
+        <div id="map" class="map-container"></div>
+        <div id="streetview-link" class="streetview-link-container"></div>
     </main>
+    <script type="text/javascript" src="{{ url_for('static', filename='func.js') }}" ></script>
 </body>
-<script>
-    function uploadImage() {
-        const fileInput = document.getElementById('imageInput');
-        const file = fileInput.files[0];
-
-        if (!file) {
-            alert("Veuillez choisir une image.");
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append("image", file);
-
-        fetch("/upload-image", {
-            method: "POST",
-            body: formData
-        })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('image').innerText = "Image uploadée : " + data.filename;
-
-                // Affiche l'image dans la balise <img>
-                const preview = document.getElementById('preview');
-                preview.src = '/uploads/' + data.filename;
-                preview.style.display = 'block';
-            })
-            .catch(error => {
-                console.error("Erreur upload :", error);
-                document.getElementById('image').innerText = "Erreur d'upload.";
-            });
-    }
-
-    function uploadFolderPath() {
-        const input = document.getElementById('folderInput');
-        const files = input.files;
-
-        if (!files.length) {
-            alert("Veuillez choisir un dossier.");
-            return;
-        }
-
-        const formData = new FormData();
-        for (let i = 0; i < files.length; i++) {
-            formData.append('files', files[i], files[i].webkitRelativePath);
-        }
-
-        fetch("/set-folder", {
-            method: "POST",
-            body: formData
-        })
-            .then(res => res.json())
-            .then(data => {
-                document.getElementById("folderPath").innerText = "Dossier sélectionné : " + data.folder;
-            })
-            .catch(err => {
-                console.error(err);
-                document.getElementById("folderPath").innerText = "Erreur lors de l'envoi du dossier.";
-            });
-    }
-
-    function runCommand() {
-        fetch('/run-bash')
-            .then(response => {
-                const statusDiv = document.getElementById('status');
-                statusDiv.innerHTML = `<strong>Status Code:</strong> ${response.status}`;
-                if (response.status >= 200 && response.status < 300) {
-                    statusDiv.style.backgroundColor = 'green';
-                    statusDiv.style.color = 'white';
-                } else if (response.status >= 400 && response.status < 500) {
-                    statusDiv.style.backgroundColor = 'orange';
-                    statusDiv.style.color = 'black';
-                } else if (response.status >= 500) {
-                    statusDiv.style.backgroundColor = 'red';
-                    statusDiv.style.color = 'white';
-                } else {
-                    statusDiv.style.backgroundColor = 'gray';
-                    statusDiv.style.color = 'white';
-                }
-                return response.json();
-            })
-            .then(data => {
-                const outputDiv = document.getElementById('output');
-
-                const orderedData = {
-                    "type": data.type,
-                    "id": data.id,
-                    "timestamp": data.timestamp,
-                    "geopose": data.geopose
-                };
-
-                const formattedData = JSON.stringify(orderedData, null, 4);
-
-                if (data.output) {
-                    outputDiv.innerHTML = `<pre>${data.output}</pre>`;
-                } else if (data.error) {
-                    outputDiv.innerHTML = `<pre>${data.error}</pre>`;
-                } else {
-                    outputDiv.innerHTML = `<pre>${formattedData}</pre>`;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-    }
-</script>
 
 </html>
