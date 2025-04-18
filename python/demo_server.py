@@ -60,7 +60,7 @@ def process():
             "frameSpecification": {
                 "authority": "EPSG",
                 "id": "4979",
-                "parameters": "longitude=-76.3000&latitude=47.7000&height=11.000"
+                "parameters": "longitude=47.37282116901568&latitude=8.541673784893511&height=417.58"
             },
             "quaternion": {
                 "x": 0.20056154657066608,
