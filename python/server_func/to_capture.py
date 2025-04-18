@@ -63,12 +63,7 @@ def run_geopose_processing(image_path, folder_path):
 
     return parse_output_json(result.stdout)
 
-def parse_output_json(stdout_text):
-    lines = stdout_text.splitlines()
-
-    json_str = lines[1].strip()
-    json_str = re.sub(r'\s*([-+]?\d*\.\d+|\d+)\s*', r'\1', json_str)
-    data = json.loads(json_str)
+def parse_output_json(data):
 
     pos = data.get('geopose', {}).get('position', {})
     quat = data.get('geopose', {}).get('quaternion', {})
@@ -86,5 +81,4 @@ def parse_output_json(stdout_text):
         'id': data.get('id'),
         'timestamp': data.get('timestamp'),
         'geopose': data.get('geopose'),
-        'output': stdout_text  # Optionnel
     }

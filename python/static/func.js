@@ -78,8 +78,6 @@ function processData(data) {
     const outputDiv = document.getElementById('output');
 
     const orderedData = {
-        "type": data.type,
-        "id": data.id,
         "timestamp": data.timestamp,
         "geopose": data.geopose
     };
