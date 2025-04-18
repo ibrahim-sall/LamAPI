@@ -131,8 +131,9 @@ def localize():
             char = f.read(1)
             if char == '\n':
                 break
-        last_line = f.readline().strip().split(',')
+        last_line = f.readline().strip().split(',') # transformation de la String en array
 
+    # Ecriture de la GeoPose
     geoPose = GeoPose()
     geoPose.quaternion.x = last_line[3]
     geoPose.quaternion.y = last_line[4]
