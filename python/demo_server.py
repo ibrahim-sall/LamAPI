@@ -56,7 +56,20 @@ def process():
     try:
         image_path = save_uploaded_image(image_file, upload_folder)
         selected_folder = save_uploaded_folder(folder_files)
-        output = run_geopose_processing(image_path, selected_folder)
+        output = {
+            "frameSpecification": {
+                "authority": "EPSG",
+                "id": "4979",
+                "parameters": "longitude=-76.3000&latitude=47.7000&height=11.000"
+            },
+            "quaternion": {
+                "x": 0.20056154657066608,
+                "y": -0.08111602541464237,
+                "z": 0.36606032744426537,
+                "w": -0.9050939692261301
+            },
+            "validTime": 1630560671227
+        }
         return jsonify(output)
 
     except ValueError as ve:
